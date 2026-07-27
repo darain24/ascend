@@ -3,15 +3,15 @@ export function SectionHeading({
   title,
   action,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 flex items-end justify-between gap-4">
+    <div className="mb-4 flex items-center justify-between gap-4">
       <div>
-        <p className="system-font mb-1 text-[8px] font-bold tracking-[0.3em] text-blue-400/70">{eyebrow}</p>
-        <h2 className="system-font text-sm font-bold tracking-[0.12em]">{title}</h2>
+        <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
+        {eyebrow && <p className="mt-1 text-[11px] text-[var(--muted)]">{eyebrow}</p>}
       </div>
       {action}
     </div>

@@ -10,43 +10,23 @@ export function Topbar() {
   const toggleSound = useHunterStore((state) => state.toggleSound);
 
   return (
-    <header className="sticky top-0 z-20 flex h-[70px] items-center justify-between border-b border-blue-300/10 bg-[color:var(--bg)]/80 px-4 backdrop-blur-xl sm:px-7">
+    <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-[var(--line)] bg-[var(--bg)]/90 px-4 backdrop-blur-xl sm:px-7">
       <div>
-        <p className="system-font text-[9px] tracking-[0.26em] text-blue-400/80">SYSTEM ONLINE</p>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          Monday, July 27 <span className="mx-2 text-blue-400/30">/</span> Daily reset in 08:42
-        </p>
+        <p className="text-sm font-medium">Monday, July 27</p>
+        <p className="mt-0.5 text-[11px] text-[var(--muted)]">A fresh day to make progress</p>
       </div>
       <div className="flex items-center gap-2">
-        <button
-          aria-label={sound ? "Mute sound" : "Enable sound"}
-          onClick={toggleSound}
-          className="grid size-9 place-items-center border border-blue-300/10 text-[var(--muted)] transition hover:border-blue-300/30 hover:text-cyan-300"
-        >
+        <button aria-label={sound ? "Mute sound" : "Enable sound"} onClick={toggleSound} className="grid size-9 place-items-center rounded-full text-[var(--muted)] transition hover:bg-[var(--panel)] hover:text-[var(--text)]">
           {sound ? <Volume2 size={16} /> : <VolumeX size={16} />}
         </button>
-        <button
-          aria-label="Toggle theme"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="grid size-9 place-items-center border border-blue-300/10 text-[var(--muted)] transition hover:border-blue-300/30 hover:text-cyan-300"
-        >
+        <button aria-label="Toggle theme" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="grid size-9 place-items-center rounded-full text-[var(--muted)] transition hover:bg-[var(--panel)] hover:text-[var(--text)]">
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>
-        <button aria-label="Notifications" className="relative grid size-9 place-items-center border border-blue-300/10 text-[var(--muted)] transition hover:text-cyan-300">
+        <button aria-label="Notifications" className="grid size-9 place-items-center rounded-full text-[var(--muted)] transition hover:bg-[var(--panel)]">
           <Bell size={16} />
-          <span className="absolute right-2 top-2 size-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_#67e8f9]" />
         </button>
-        <button
-          onClick={() => useHunterStore.getState().setView("profile")}
-          className="ml-1 flex items-center gap-3"
-        >
-          <div className="grid size-9 place-items-center border border-blue-300/30 bg-gradient-to-br from-blue-500/30 to-cyan-300/5 system-font text-xs font-bold text-cyan-200">
-            AQ
-          </div>
-          <div className="hidden text-left sm:block">
-            <p className="text-xs font-semibold">Arin Qamar</p>
-            <p className="system-font text-[8px] tracking-widest text-blue-400">NOVICE HUNTER</p>
-          </div>
+        <button onClick={() => useHunterStore.getState().setView("profile")} className="ml-1 grid size-9 place-items-center rounded-full bg-[#dbe5dc] text-xs font-semibold text-[#395442]">
+          AQ
         </button>
       </div>
     </header>

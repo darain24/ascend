@@ -22,7 +22,7 @@ type HunterStore = {
 export const useHunterStore = create<HunterStore>((set) => ({
   hunter: initialHunter,
   quests: initialQuests,
-  theme: "dark",
+  theme: "light",
   sound: true,
   activeView: "dashboard",
   overlay: null,

@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Providers } from "./providers";
-import { AmbientBackground } from "./ambient-background";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { Dashboard } from "./views/dashboard";
@@ -36,9 +35,8 @@ function Shell() {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)]">
-      <AmbientBackground />
       <Sidebar />
-      <div className="relative z-10 min-h-screen pb-24 md:ml-[88px] md:pb-0 xl:ml-[250px]">
+      <div className="relative min-h-screen pb-24 md:ml-[88px] md:pb-0 xl:ml-[232px]">
         <Topbar />
         <AnimatePresence mode="wait">
           <motion.div
