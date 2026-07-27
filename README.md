@@ -1,44 +1,15 @@
 # Ascend
 
-Ascend turns real-life self-improvement into a hunter progression system. Daily habits become quests; completed quests award server-verified XP, raise one of five attributes, extend streaks, and move the hunter through ranks E–S.
+Ascend turns real-life self-improvement into a hunter progression system. Habits become quests; completed quests award server-verified XP, raise five independent attributes, extend streaks, and move the hunter from Rank E to Rank S.
 
-The interface is deliberately built as a cohesive “System” rather than a generic dashboard: holographic panels, animated stat bars, rank emblems, ambient scan lines, quest-complete overlays, responsive mobile navigation, and subtle audio feedback all reinforce the same fiction.
+## Run locally
 
-## Product surface
+Requirements:
 
-- Daily, custom, and weekly dungeon quests
-- Server-authoritative XP, levels, ranks, and stat rewards
-- Optimistic quest feedback with React Query
-- Independent STR, VIT, INT, AGI, and PER progression
-- Discipline meter and restorative Penalty Zone
-- Streak heatmap, XP trend, and stat radar analytics
-- Achievement case, unlockable titles, hunter profile, avatar control
-- Dark/light themes and muteable Web Audio feedback
-- Installable PWA shell with offline fallback
-- Protected daily-reset cron endpoint
-- Responsive command center for phone, tablet, and desktop
+- Node.js 20 or newer
+- npm 10 or newer
 
-## Architecture
-
-The hosted portfolio build uses the Sites Vinext runtime, React Server Components, Tailwind CSS, Framer Motion, Zustand, React Query, Recharts, and a D1/Drizzle persistence schema. The repository also includes the complete Neon/Postgres Prisma schema requested for a Vercel deployment, including Auth.js adapter models and indexed game entities.
-
-Game rules live in `lib/game-logic`. They are pure functions with no framework or database dependency, so rank boundaries and the XP curve are easy to test and tune.
-
-### Why XP is server-authoritative
-
-The browser sends only the quest identifier. Reward values are resolved against server-owned quest definitions, and the server returns the new hunter state. Clients never submit an XP award, level, rank, or stat increase. This keeps optimistic interaction fast without turning the browser into a trusted game engine.
-
-For a multi-user Vercel deployment, connect the provided Prisma schema to Neon and move the route-local showcase state into a transaction:
-
-1. Verify the authenticated user.
-2. Lock/read the active quest and current `UserStats`.
-3. Reject duplicate completion logs.
-4. Apply the pure progression engine.
-5. Write `QuestLog`, `UserStats`, `StatHistory`, and unlocked achievements atomically.
-
-## Local setup
-
-Requirements: Node.js 22.13 or newer.
+Install and start the development server:
 
 ```bash
 cp .env.example .env.local
@@ -46,29 +17,103 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000).
 
-Useful commands:
+The development server supports hot reload. Stop it with `Ctrl+C`.
+
+## Test locally
+
+Run the game-engine unit tests:
 
 ```bash
-npm run test
 npm run test:logic
-npm run lint
-npm run db:generate
 ```
 
-## Data model
+Run the full verification suite, including a production build:
 
-The Prisma design covers Auth.js-compatible users, accounts and sessions, `UserStats`, quests and immutable completion logs, stat history, achievements, and penalty logs. High-frequency ownership and time-series lookups are indexed, while child records cascade with their owning user or quest.
+```bash
+npm test
+```
 
-The D1 schema in `db/schema.ts` mirrors the hosted showcase model. Generate checked-in SQL migrations with `npm run db:generate`.
+Run linting separately:
 
-## Environment variables
+```bash
+npm run lint
+```
 
-See `.env.example` for Neon, Auth.js Google OAuth, Uploadthing, and cron values. Keep secrets in the hosting provider’s encrypted environment configuration; never commit `.env.local`.
+Test the production server locally:
 
-## Deployment
+```bash
+npm run build
+npm start
+```
 
-The source is ready for the included Sites publishing workflow. The Prisma schema and environment contract are also structured for a Vercel + Neon production target.
+Then visit [http://localhost:3000](http://localhost:3000). To use another port:
 
-The daily reset route is `GET /api/cron/daily-reset` and expects `Authorization: Bearer $CRON_SECRET` when the secret is configured.
+```bash
+npm start -- -p 4000
+```
+
+## Environment
+
+The current portfolio interface runs with built-in demonstration data. Copy `.env.example` to `.env.local` before connecting external services.
+
+- `NEXT_PUBLIC_APP_URL`: canonical application URL
+- `DATABASE_URL`: pooled Neon Postgres connection
+- `DIRECT_URL`: direct Neon connection used by Prisma migrations
+- `AUTH_SECRET`: Auth.js signing secret
+- `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`: Google OAuth credentials
+- `UPLOADTHING_TOKEN`: Uploadthing server token
+- `CRON_SECRET`: protects the daily-reset endpoint
+
+Never commit `.env.local`.
+
+## Database
+
+The Neon/Postgres data model is defined in `prisma/schema.prisma`.
+
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
+Use `npm run db:push` only for disposable development databases where migration history is not required.
+
+## Deploy to Vercel
+
+1. Push the repository to GitHub, GitLab, or Bitbucket.
+2. Import the repository in Vercel.
+3. Keep the detected framework preset as **Next.js**.
+4. Add the environment variables from `.env.example`.
+5. Set `NEXT_PUBLIC_APP_URL` to the final Vercel or custom-domain URL.
+6. Deploy.
+
+Vercel uses:
+
+- Build command: `npm run build`
+- Output: Next.js default
+- Install command: `npm install`
+
+## Deploy to Render
+
+Create a **Web Service** from the repository with:
+
+- Runtime: Node
+- Build command: `npm install && npm run build`
+- Start command: `npm start -- -p $PORT`
+- Health check path: `/`
+
+Add the environment variables from `.env.example`. Set `NEXT_PUBLIC_APP_URL` to the Render service URL and use Node.js 20 or newer.
+
+## Architecture
+
+- Next.js 14 App Router and TypeScript
+- Tailwind CSS
+- Framer Motion
+- Zustand and React Query
+- Recharts
+- Prisma schema for Neon Postgres
+- Pure, unit-tested XP and rank engine in `lib/game-logic`
+- Installable PWA shell
+
+The browser sends only a quest identifier. Reward values are resolved from server-owned definitions; clients cannot submit their own XP, rank, level, or stat rewards.

@@ -13,7 +13,9 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ascend-hunter-system.openai.site"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  ),
   title: {
     default: "Ascend — Hunter System",
     template: "%s · Ascend",
