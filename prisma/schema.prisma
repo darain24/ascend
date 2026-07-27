@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum QuestType {
+  DAILY
+  CUSTOM
+  DUNGEON
+}
+
+enum Difficulty {
+  EASY
+  NORMAL
+  HARD
+  ELITE
+}
+
+enum Rank {
+  E
+  D
+  C
+  B
+  A
+  S
+}
+
+enum Stat {
+  STR
+  VIT
+  INT
+  AGI
+  PER
+}
+
+model User {
+  id              String            @id @default(cuid())
+  name            String?
+  email           String?           @unique
+  emailVerified   DateTime?
+  image           String?
+  passwordHash    String?
+  displayName     String?
+  avatarUrl       String?
+  timezone        String            @default("UTC")
+  title           String            @default("Novice Hunter")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  accounts        Account[]
+  sessions        Session[]
+  stats           UserStats?
+  quests          Quest[]
+  questLogs       QuestLog[]
+  statHistory     StatHistory[]
+  achievements    UserAchievement[]
+  penalties       PenaltyLog[]
+}
+
+model UserStats {
+  id               String @id @default(cuid())
+  userId           String @unique
+  level            Int    @default(1)
+  currentXp        Int    @default(0)
+  xpToNextLevel    Int    @default(100)
+  rank             Rank   @default(E)
+  str              Int    @default(1)
+  vit              Int    @default(1)
+  int              Int    @default(1)
+  agi              Int    @default(1)
+  per              Int    @default(1)
+  disciplineMeter  Int    @default(100)
+  currentStreak    Int    @default(0)
+  longestStreak    Int    @default(0)
+  totalXpEarned    Int    @default(0)
+  totalCompleted   Int    @default(0)
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Quest {
+  id          String      @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  category    Stat
+  type        QuestType
+  difficulty  Difficulty
+  xpReward    Int
+  active      Boolean     @default(true)
+  recurrence  String?
+  targetValue Float?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs        QuestLog[]
+
+  @@index([userId, active])
+  @@index([userId, type])
+}
+
+model QuestLog {
+  id          String   @id @default(cuid())
+  questId     String
+  userId      String
+  completedAt DateTime @default(now())
+  xpAwarded   Int
+  wasOnTime   Boolean  @default(true)
+  quest       Quest    @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+  @@index([questId, completedAt])
+}
+
+model StatHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  stat       Stat
+  value      Int
+  recordedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+}
+
+model Achievement {
+  id          String            @id @default(cuid())
+  key         String            @unique
+  title       String
+  description String
+  iconKey     String
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+}
+
+model PenaltyLog {
+  id        String    @id @default(cuid())
+  userId    String
+  reason    String
+  appliedAt DateTime  @default(now())
+  clearedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, appliedAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
