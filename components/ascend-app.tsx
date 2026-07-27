@@ -8,6 +8,7 @@ import { Topbar } from "./topbar";
 import { Dashboard } from "./views/dashboard";
 import { QuestsView } from "./views/quests-view";
 import { AnalyticsView } from "./views/analytics-view";
+import { JourneyView } from "./views/journey-view";
 import { ProfileView } from "./views/profile-view";
 import { SystemNotification } from "./system-notification";
 import { useHunterStore } from "@/store/use-hunter-store";
@@ -29,6 +30,7 @@ function Shell() {
   const views = {
     dashboard: <Dashboard />,
     quests: <QuestsView />,
+    journey: <JourneyView />,
     analytics: <AnalyticsView />,
     profile: <ProfileView />,
   };

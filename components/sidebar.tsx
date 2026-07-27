@@ -1,11 +1,12 @@
 "use client";
 
-import { BarChart3, CheckSquare2, Home, Settings, TrendingUp, UserRound } from "lucide-react";
+import { BarChart3, CheckSquare2, Compass, Home, Settings, TrendingUp, UserRound } from "lucide-react";
 import { useHunterStore } from "@/store/use-hunter-store";
 
 const nav = [
   { id: "dashboard", label: "Overview", icon: Home },
   { id: "quests", label: "Quests", icon: CheckSquare2 },
+  { id: "journey", label: "Journey", icon: Compass },
   { id: "analytics", label: "Progress", icon: BarChart3 },
   { id: "profile", label: "Profile", icon: UserRound },
 ] as const;

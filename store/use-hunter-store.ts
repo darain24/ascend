@@ -9,12 +9,17 @@ type HunterStore = {
   quests: Quest[];
   theme: "dark" | "light";
   sound: boolean;
-  activeView: "dashboard" | "quests" | "analytics" | "profile";
+  activeView: "dashboard" | "quests" | "journey" | "analytics" | "profile";
+  skillPoints: number;
+  unlockedSkills: string[];
+  inventory: Record<string, number>;
   overlay: null | { kind: "quest" | "level" | "rank"; title: string; subtitle: string };
   setView: (view: HunterStore["activeView"]) => void;
   setTheme: (theme: HunterStore["theme"]) => void;
   toggleSound: () => void;
   addQuest: (quest: Quest) => void;
+  unlockSkill: (skillId: string, cost: number) => boolean;
+  useItem: (itemId: string) => boolean;
   setOverlay: (overlay: HunterStore["overlay"]) => void;
   applyCompletion: (questId: string, next: HunterState) => void;
 };
@@ -25,11 +30,42 @@ export const useHunterStore = create<HunterStore>((set) => ({
   theme: "light",
   sound: true,
   activeView: "dashboard",
+  skillPoints: 3,
+  unlockedSkills: ["steady-start"],
+  inventory: { "streak-shield": 2, "focus-boost": 1, "recovery-pass": 1 },
   overlay: null,
   setView: (activeView) => set({ activeView }),
   setTheme: (theme) => set({ theme }),
   toggleSound: () => set((state) => ({ sound: !state.sound })),
   addQuest: (quest) => set((state) => ({ quests: [...state.quests, quest] })),
+  unlockSkill: (skillId, cost) => {
+    let unlocked = false;
+    set((state) => {
+      if (state.skillPoints < cost || state.unlockedSkills.includes(skillId)) return state;
+      unlocked = true;
+      return {
+        skillPoints: state.skillPoints - cost,
+        unlockedSkills: [...state.unlockedSkills, skillId],
+      };
+    });
+    return unlocked;
+  },
+  useItem: (itemId) => {
+    let used = false;
+    set((state) => {
+      const count = state.inventory[itemId] ?? 0;
+      if (count < 1) return state;
+      used = true;
+      return {
+        inventory: { ...state.inventory, [itemId]: count - 1 },
+        hunter:
+          itemId === "recovery-pass"
+            ? { ...state.hunter, discipline: Math.min(100, state.hunter.discipline + 10) }
+            : state.hunter,
+      };
+    });
+    return used;
+  },
   setOverlay: (overlay) => set({ overlay }),
   applyCompletion: (questId, hunter) =>
     set((state) => ({
