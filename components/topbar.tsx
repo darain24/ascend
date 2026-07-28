@@ -1,6 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useHunterStore } from "@/store/use-hunter-store";
 import { NotificationCenter } from "./notification-center";
@@ -8,6 +9,7 @@ import { NotificationCenter } from "./notification-center";
 export function Topbar() {
   const [currentDate, setCurrentDate] = useState("");
   const theme = useHunterStore((state) => state.theme);
+  const profile = useHunterStore((state) => state.profile);
   const setTheme = useHunterStore((state) => state.setTheme);
 
   useEffect(() => {
@@ -34,8 +36,27 @@ export function Topbar() {
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>
         <NotificationCenter />
-        <button onClick={() => useHunterStore.getState().setView("profile")} className="ml-1 grid size-9 place-items-center rounded-full bg-[#dbe5dc] text-xs font-semibold text-[#395442]">
-          AQ
+        <button
+          aria-label={`Open ${profile.name}'s profile`}
+          onClick={() => useHunterStore.getState().setView("profile")}
+          className="relative ml-1 grid size-9 overflow-hidden rounded-full bg-[#dbe5dc] text-xs font-semibold text-[#395442]"
+        >
+          {profile.avatarUrl ? (
+            <Image
+              src={profile.avatarUrl}
+              alt=""
+              fill
+              unoptimized
+              className="object-cover"
+            />
+          ) : (
+            profile.name
+              .split(/\s+/)
+              .map((part) => part[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase()
+          )}
         </button>
       </div>
     </header>

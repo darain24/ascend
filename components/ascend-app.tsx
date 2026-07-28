@@ -18,6 +18,10 @@ function Shell() {
   const theme = useHunterStore((state) => state.theme);
 
   useEffect(() => {
+    void useHunterStore.persist.rehydrate();
+  }, []);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 

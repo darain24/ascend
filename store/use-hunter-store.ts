@@ -1,12 +1,20 @@
 "use client";
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { initialHunter, initialQuests } from "@/lib/demo-data";
 import type { HunterState, Quest } from "@/types/game";
+
+type HunterProfile = {
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+};
 
 type HunterStore = {
   hunter: HunterState;
   quests: Quest[];
+  profile: HunterProfile;
   theme: "dark" | "light";
   sound: boolean;
   activeView: "dashboard" | "quests" | "journey" | "analytics" | "profile";
@@ -17,6 +25,7 @@ type HunterStore = {
   setView: (view: HunterStore["activeView"]) => void;
   setTheme: (theme: HunterStore["theme"]) => void;
   toggleSound: () => void;
+  updateProfile: (profile: Partial<HunterProfile>) => void;
   addQuest: (quest: Quest) => void;
   unlockSkill: (skillId: string, cost: number) => boolean;
   useItem: (itemId: string) => boolean;
@@ -24,9 +33,15 @@ type HunterStore = {
   applyCompletion: (questId: string, next: HunterState) => void;
 };
 
-export const useHunterStore = create<HunterStore>((set) => ({
+export const useHunterStore = create<HunterStore>()(
+  persist((set) => ({
   hunter: initialHunter,
   quests: initialQuests,
+  profile: {
+    name: "Arin Qamar",
+    email: "arin@example.com",
+    avatarUrl: null,
+  },
   theme: "light",
   sound: true,
   activeView: "dashboard",
@@ -37,6 +52,8 @@ export const useHunterStore = create<HunterStore>((set) => ({
   setView: (activeView) => set({ activeView }),
   setTheme: (theme) => set({ theme }),
   toggleSound: () => set((state) => ({ sound: !state.sound })),
+  updateProfile: (profile) =>
+    set((state) => ({ profile: { ...state.profile, ...profile } })),
   addQuest: (quest) => set((state) => ({ quests: [...state.quests, quest] })),
   unlockSkill: (skillId, cost) => {
     let unlocked = false;
@@ -74,4 +91,13 @@ export const useHunterStore = create<HunterStore>((set) => ({
         quest.id === questId ? { ...quest, completed: true } : quest,
       ),
     })),
-}));
+  }), {
+    name: "ascend-user-profile",
+    partialize: (state) => ({
+      profile: state.profile,
+      theme: state.theme,
+      sound: state.sound,
+    }),
+    skipHydration: true,
+  }),
+);
