@@ -10,6 +10,7 @@ const nav = [
   { id: "journey", label: "Journey", icon: Compass },
   { id: "analytics", label: "Progress", icon: BarChart3 },
   { id: "profile", label: "Profile", icon: UserRound },
+  { id: "settings", label: "Settings", icon: Settings },
 ] as const;
 
 export function Sidebar() {
@@ -47,12 +48,6 @@ export function Sidebar() {
             </button>
           ))}
         </nav>
-        <div className="p-3">
-          <button className="flex h-11 w-full items-center justify-center gap-3 rounded-xl px-3 text-sm text-[var(--muted)] transition hover:bg-black/[0.035] xl:justify-start">
-            <Settings size={18} />
-            <span className="hidden xl:block">Settings</span>
-          </button>
-        </div>
       </aside>
 
       <nav className="fixed inset-x-3 bottom-3 z-40 flex h-16 items-center justify-around rounded-2xl border border-[var(--line)] bg-[var(--panel)] px-2 shadow-lg md:hidden">
@@ -61,7 +56,7 @@ export function Sidebar() {
             key={id}
             aria-label={label}
             onClick={() => setView(id)}
-            className={`flex min-w-16 flex-col items-center gap-1 text-[10px] ${active === id ? "text-indigo-600" : "text-[var(--muted)]"}`}
+            className={`flex min-w-0 flex-1 flex-col items-center gap-1 text-[9px] ${active === id ? "text-indigo-600" : "text-[var(--muted)]"}`}
           >
             <Icon size={19} />
             <span>{label}</span>

@@ -17,7 +17,7 @@ type HunterStore = {
   profile: HunterProfile;
   theme: "dark" | "light";
   sound: boolean;
-  activeView: "dashboard" | "quests" | "journey" | "analytics" | "profile";
+  activeView: "dashboard" | "quests" | "journey" | "analytics" | "profile" | "settings";
   skillPoints: number;
   unlockedSkills: string[];
   inventory: Record<string, number>;

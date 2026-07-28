@@ -10,6 +10,7 @@ import { QuestsView } from "./views/quests-view";
 import { AnalyticsView } from "./views/analytics-view";
 import { JourneyView } from "./views/journey-view";
 import { ProfileView } from "./views/profile-view";
+import { SettingsView } from "./views/settings-view";
 import { SystemNotification } from "./system-notification";
 import { useHunterStore } from "@/store/use-hunter-store";
 
@@ -37,6 +38,7 @@ function Shell() {
     journey: <JourneyView />,
     analytics: <AnalyticsView />,
     profile: <ProfileView />,
+    settings: <SettingsView />,
   };
 
   return (
