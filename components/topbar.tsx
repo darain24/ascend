@@ -1,8 +1,9 @@
 "use client";
 
-import { Bell, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useHunterStore } from "@/store/use-hunter-store";
+import { NotificationCenter } from "./notification-center";
 
 export function Topbar() {
   const [currentDate, setCurrentDate] = useState("");
@@ -32,9 +33,7 @@ export function Topbar() {
         <button aria-label="Toggle theme" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="grid size-9 place-items-center rounded-full text-[var(--muted)] transition hover:bg-[var(--panel)] hover:text-[var(--text)]">
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>
-        <button aria-label="Notifications" className="grid size-9 place-items-center rounded-full text-[var(--muted)] transition hover:bg-[var(--panel)]">
-          <Bell size={16} />
-        </button>
+        <NotificationCenter />
         <button onClick={() => useHunterStore.getState().setView("profile")} className="ml-1 grid size-9 place-items-center rounded-full bg-[#dbe5dc] text-xs font-semibold text-[#395442]">
           AQ
         </button>
