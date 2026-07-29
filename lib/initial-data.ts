@@ -14,5 +14,3 @@ export const initialHunter: HunterState = {
 };
 
 export const initialQuests: Quest[] = [];
-
-export const emptyActivity = Array<number>(84).fill(0);

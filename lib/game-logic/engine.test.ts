@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { applyXp, rankForLevel, xpForLevel } from "./engine";
 import { initialHunter, initialQuests } from "../initial-data";
+import {
+  addQuestCompletion,
+  buildActivityDays,
+  localDateKey,
+} from "../activity";
 
 describe("game engine", () => {
   it("starts every new journey with no progress or quests", () => {
@@ -14,6 +19,34 @@ describe("game engine", () => {
       stats: { STR: 0, VIT: 0, INT: 0, AGI: 0, PER: 0 },
     });
     expect(initialQuests).toEqual([]);
+  });
+
+  it("records quest completions on the user's local calendar day", () => {
+    const completedAt = new Date(2026, 6, 29, 23, 45);
+    const first = addQuestCompletion({}, 60, completedAt);
+    const second = addQuestCompletion(first, 35, completedAt);
+
+    expect(first[localDateKey(completedAt)]).toEqual({ completed: 1, xp: 60 });
+    expect(second[localDateKey(completedAt)]).toEqual({ completed: 2, xp: 95 });
+  });
+
+  it("builds chronological heatmap days with activity intensity", () => {
+    const today = new Date(2026, 6, 29, 10);
+    const todayKey = localDateKey(today);
+    const days = buildActivityDays(
+      { [todayKey]: { completed: 4, xp: 230 } },
+      7,
+      today,
+    );
+
+    expect(days).toHaveLength(7);
+    expect(days[0].dateKey).toBe("2026-07-23");
+    expect(days[6]).toMatchObject({
+      dateKey: todayKey,
+      completed: 4,
+      xp: 230,
+      intensity: 4,
+    });
   });
 
   it("uses a predictable progressive XP curve", () => {

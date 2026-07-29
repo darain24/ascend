@@ -5,13 +5,14 @@ import { useHunterStore } from "@/store/use-hunter-store";
 import { StatCard } from "../stat-card";
 import { QuestCard } from "../quest-card";
 import { SectionHeading } from "../section-heading";
-import { emptyActivity } from "@/lib/initial-data";
+import { ActivityHeatmap } from "../activity-heatmap";
 import type { StatKey } from "@/lib/game-logic/constants";
 
 export function Dashboard() {
   const hunter = useHunterStore((state) => state.hunter);
   const quests = useHunterStore((state) => state.quests);
   const profile = useHunterStore((state) => state.profile);
+  const activity = useHunterStore((state) => state.activity);
   const setView = useHunterStore((state) => state.setView);
   const completed = quests.filter((quest) => quest.completed).length;
   const dayPercent = quests.length ? Math.round((completed / quests.length) * 100) : 0;
@@ -114,11 +115,7 @@ export function Dashboard() {
 
           <section className="system-panel p-5">
             <SectionHeading title="Recent activity" eyebrow="Last 12 weeks" />
-            <div className="grid grid-flow-col grid-rows-7 gap-1">
-              {emptyActivity.map((value, index) => (
-                <div key={index} className="aspect-square min-h-2 rounded-[3px]" style={{ background: value === 0 ? "#eef0ed" : `rgba(61, 155, 114, ${0.18 + value * 0.2})` }} />
-              ))}
-            </div>
+            <ActivityHeatmap activity={activity} compact />
           </section>
 
           <section className="system-panel flex items-center gap-4 p-5">

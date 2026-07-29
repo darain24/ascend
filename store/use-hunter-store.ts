@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { initialHunter, initialQuests } from "@/lib/initial-data";
+import { addQuestCompletion, type ActivityHistory } from "@/lib/activity";
 import type { HunterState, Quest } from "@/types/game";
 
 type HunterProfile = {
@@ -21,6 +22,7 @@ type HunterStore = {
   skillPoints: number;
   unlockedSkills: string[];
   inventory: Record<string, number>;
+  activity: ActivityHistory;
   overlay: null | { kind: "quest" | "level" | "rank"; title: string; subtitle: string };
   setView: (view: HunterStore["activeView"]) => void;
   setTheme: (theme: HunterStore["theme"]) => void;
@@ -49,6 +51,7 @@ export const useHunterStore = create<HunterStore>()(
   skillPoints: 0,
   unlockedSkills: [],
   inventory: {},
+  activity: {},
   overlay: null,
   setView: (activeView) => set({ activeView }),
   setTheme: (theme) => set({ theme }),
@@ -62,6 +65,7 @@ export const useHunterStore = create<HunterStore>()(
       skillPoints: 0,
       unlockedSkills: [],
       inventory: {},
+      activity: {},
       activeView: "dashboard",
       overlay: null,
     }),
@@ -96,12 +100,18 @@ export const useHunterStore = create<HunterStore>()(
   },
   setOverlay: (overlay) => set({ overlay }),
   applyCompletion: (questId, hunter) =>
-    set((state) => ({
-      hunter,
-      quests: state.quests.map((quest) =>
-        quest.id === questId ? { ...quest, completed: true } : quest,
-      ),
-    })),
+    set((state) => {
+      const completedQuest = state.quests.find((quest) => quest.id === questId);
+      return {
+        hunter,
+        quests: state.quests.map((quest) =>
+          quest.id === questId ? { ...quest, completed: true } : quest,
+        ),
+        activity: completedQuest
+          ? addQuestCompletion(state.activity, completedQuest.xp)
+          : state.activity,
+      };
+    }),
   }), {
     name: "ascend-user-profile",
     partialize: (state) => ({
@@ -113,11 +123,15 @@ export const useHunterStore = create<HunterStore>()(
       skillPoints: state.skillPoints,
       unlockedSkills: state.unlockedSkills,
       inventory: state.inventory,
+      activity: state.activity,
     }),
-    version: 2,
+    version: 3,
     migrate: (persistedState, version) => {
-      if (version >= 2) return persistedState;
+      if (version >= 3) return persistedState;
       const persisted = persistedState as Partial<HunterStore>;
+      if (version === 2) {
+        return { ...persisted, activity: {} };
+      }
       const profile =
         persisted.profile?.email === "arin@example.com"
           ? { name: "Hunter", email: "", avatarUrl: null }
@@ -130,6 +144,7 @@ export const useHunterStore = create<HunterStore>()(
         skillPoints: 0,
         unlockedSkills: [],
         inventory: {},
+        activity: {},
       };
     },
     skipHydration: true,
