@@ -45,7 +45,10 @@ body {
 }
 
 button, input, select { font: inherit; }
-button { cursor: pointer; }
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
 ::selection { background: #dedefc; color: #292a66; }
 
 .system-font {
@@ -67,6 +70,98 @@ button { cursor: pointer; }
 .glow-text { text-shadow: none; }
 .grid-bg, .scanline { display: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes page-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes panel-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes soft-pop {
+    0% { transform: scale(0.82); opacity: 0; }
+    65% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  body {
+    animation: page-fade-in 320ms ease-out both;
+  }
+
+  .system-panel {
+    animation: panel-reveal 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    transition:
+      transform 220ms ease,
+      border-color 220ms ease,
+      box-shadow 220ms ease,
+      background-color 220ms ease;
+  }
+
+  .view-enter > * {
+    animation: panel-reveal 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .view-enter > *:nth-child(2) { animation-delay: 45ms; }
+  .view-enter > *:nth-child(3) { animation-delay: 90ms; }
+  .view-enter > *:nth-child(4) { animation-delay: 135ms; }
+
+  .system-panel:hover {
+    border-color: var(--line-hot);
+    box-shadow: 0 8px 24px rgba(20, 30, 24, 0.055);
+    transform: translateY(-2px);
+  }
+
+  button {
+    transition:
+      color 160ms ease,
+      background-color 160ms ease,
+      border-color 160ms ease,
+      opacity 160ms ease,
+      transform 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  button:not(:disabled):active {
+    transform: scale(0.97);
+  }
+
+  button svg {
+    transition: transform 180ms ease;
+  }
+
+  button:not(:disabled):hover svg {
+    transform: scale(1.08);
+  }
+
+  input,
+  select {
+    transition:
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      background-color 180ms ease;
+  }
+
+  [role="dialog"] [class*="rounded-full"][class*="bg-indigo"],
+  [role="dialog"] [class*="rounded-full"][class*="bg-emerald"] {
+    animation: soft-pop 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  [class*="overflow-hidden"] > [class*="bg-indigo-5"],
+  [class*="overflow-hidden"] > [class*="bg-emerald-5"],
+  [class*="overflow-hidden"] > [class*="bg-violet-5"] {
+    transition: width 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

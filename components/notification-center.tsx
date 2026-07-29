@@ -11,6 +11,7 @@ import {
   Target,
   X,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useHunterStore } from "@/store/use-hunter-store";
 
@@ -136,18 +137,26 @@ export function NotificationCenter() {
         )}
       </button>
 
-      {open && (
-        <>
-          <button
+      <AnimatePresence>
+        {open && (
+          <>
+          <motion.button
             aria-label="Close upcoming events"
             className="fixed inset-0 z-40 cursor-default bg-black/10"
             onClick={() => setOpen(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           />
-          <section
+          <motion.section
             role="dialog"
             aria-modal="true"
             aria-label="Upcoming events"
             className="fixed inset-x-3 top-20 z-50 max-h-[calc(100vh-6rem)] overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-2xl sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-[390px]"
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           >
             <header className="flex items-start justify-between border-b border-[var(--line)] px-5 py-4">
               <div>
@@ -225,9 +234,10 @@ export function NotificationCenter() {
                 </button>
               </footer>
             )}
-          </section>
-        </>
-      )}
+          </motion.section>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
