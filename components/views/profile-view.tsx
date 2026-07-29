@@ -25,13 +25,6 @@ import type { StatKey } from "@/lib/game-logic/constants";
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
 
-const achievements = [
-  { title: "First step", detail: "Completed your first quest", icon: Sparkles, unlocked: true, color: "bg-indigo-50 text-indigo-600" },
-  { title: "One full week", detail: "Maintained a 7-day streak", icon: Medal, unlocked: true, color: "bg-emerald-50 text-emerald-600" },
-  { title: "One hundred", detail: "Completed 100 quests", icon: Trophy, unlocked: true, color: "bg-amber-50 text-amber-600" },
-  { title: "Rank C", detail: "Reach Hunter Rank C", icon: Medal, unlocked: false, color: "bg-blue-50 text-blue-600" },
-];
-
 export function ProfileView() {
   const hunter = useHunterStore((state) => state.hunter);
   const profile = useHunterStore((state) => state.profile);
@@ -44,6 +37,13 @@ export function ProfileView() {
   const [profileError, setProfileError] = useState("");
   const [profileNotice, setProfileNotice] = useState("");
   const [avatarError, setAvatarError] = useState("");
+  const achievements = [
+    { title: "First step", detail: "Complete your first quest", icon: Sparkles, unlocked: hunter.totalCompleted >= 1, color: "bg-indigo-50 text-indigo-600" },
+    { title: "One full week", detail: "Maintain a 7-day streak", icon: Medal, unlocked: hunter.longestStreak >= 7, color: "bg-emerald-50 text-emerald-600" },
+    { title: "One hundred", detail: "Complete 100 quests", icon: Trophy, unlocked: hunter.totalCompleted >= 100, color: "bg-amber-50 text-amber-600" },
+    { title: "Rank C", detail: "Reach Hunter Rank C", icon: Medal, unlocked: ["C", "B", "A", "S"].includes(hunter.rank), color: "bg-blue-50 text-blue-600" },
+  ];
+  const unlockedAchievementCount = achievements.filter((achievement) => achievement.unlocked).length;
   useEffect(() => {
     setName(profile.name);
     setEmail(profile.email);
@@ -151,7 +151,7 @@ export function ProfileView() {
           </div>
           <div className="flex-1">
             <h2 className="text-2xl font-semibold tracking-tight">{profile.name}</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">{profile.email}</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">{profile.email || "Add your email"}</p>
             <p className="mt-1 text-xs text-[var(--muted)]">Novice Hunter · Level {hunter.level}</p>
             <span className="mt-3 inline-flex rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-medium text-indigo-700">Rank {hunter.rank}</span>
           </div>
@@ -196,7 +196,7 @@ export function ProfileView() {
 
           <section className="system-panel p-5 sm:p-6">
             <h2 className="text-sm font-semibold">Achievements</h2>
-            <p className="mt-1 text-[11px] text-[var(--muted)]">3 of 18 unlocked</p>
+            <p className="mt-1 text-[11px] text-[var(--muted)]">{unlockedAchievementCount} of {achievements.length} unlocked</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {achievements.map(({ title, detail, icon: Icon, unlocked, color }) => (
                 <div key={title} className={`relative rounded-2xl border border-[var(--line)] p-4 ${unlocked ? "" : "opacity-45"}`}>

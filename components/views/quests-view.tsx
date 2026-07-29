@@ -42,13 +42,18 @@ export function QuestsView() {
         <section className="system-panel p-4 sm:p-5">
           <div className="mb-4 flex justify-between"><h2 className="text-sm font-semibold">Your list</h2><span className="text-xs text-[var(--muted)]">{visible.length} quests</span></div>
           <div className="grid gap-2">{visible.map((quest) => <QuestCard expanded key={quest.id} quest={quest} />)}</div>
+          {visible.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-[var(--line)] px-5 py-10 text-center">
+              <p className="text-sm font-medium">{quests.length ? "No matching quests" : "No quests yet"}</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">{quests.length ? "Try a different search or filter." : "Add your first quest to begin your journey."}</p>
+              {!quests.length && <button onClick={() => setModalOpen(true)} className="mt-4 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-medium text-white">Add first quest</button>}
+            </div>
+          )}
         </section>
         <aside className="space-y-5">
           <div className="system-panel p-5">
-            <p className="text-sm font-semibold">Weekly challenge</p>
-            <p className="mt-1 text-xs text-[var(--muted)]">Run 20 km before Sunday</p>
-            <div className="mt-5 flex justify-between text-[11px]"><span>12.4 km</span><span className="font-medium text-violet-600">62%</span></div>
-            <div className="mt-2 h-2 rounded-full bg-slate-100"><div className="h-full w-[62%] rounded-full bg-violet-500" /></div>
+            <p className="text-sm font-semibold">No weekly challenge</p>
+            <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">Challenges will unlock as you complete quests and build consistent activity.</p>
           </div>
           <div className="system-panel p-5">
             <p className="text-sm font-semibold">A gentle reminder</p>

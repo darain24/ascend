@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { initialHunter, initialQuests } from "@/lib/demo-data";
+import { initialHunter, initialQuests } from "@/lib/initial-data";
 import type { HunterState, Quest } from "@/types/game";
 
 type HunterProfile = {
@@ -26,6 +26,7 @@ type HunterStore = {
   setTheme: (theme: HunterStore["theme"]) => void;
   toggleSound: () => void;
   updateProfile: (profile: Partial<HunterProfile>) => void;
+  resetJourney: () => void;
   addQuest: (quest: Quest) => void;
   unlockSkill: (skillId: string, cost: number) => boolean;
   useItem: (itemId: string) => boolean;
@@ -38,22 +39,32 @@ export const useHunterStore = create<HunterStore>()(
   hunter: initialHunter,
   quests: initialQuests,
   profile: {
-    name: "Arin Qamar",
-    email: "arin@example.com",
+    name: "Hunter",
+    email: "",
     avatarUrl: null,
   },
   theme: "light",
   sound: true,
   activeView: "dashboard",
-  skillPoints: 3,
-  unlockedSkills: ["steady-start"],
-  inventory: { "streak-shield": 2, "focus-boost": 1, "recovery-pass": 1 },
+  skillPoints: 0,
+  unlockedSkills: [],
+  inventory: {},
   overlay: null,
   setView: (activeView) => set({ activeView }),
   setTheme: (theme) => set({ theme }),
   toggleSound: () => set((state) => ({ sound: !state.sound })),
   updateProfile: (profile) =>
     set((state) => ({ profile: { ...state.profile, ...profile } })),
+  resetJourney: () =>
+    set({
+      hunter: { ...initialHunter, stats: { ...initialHunter.stats } },
+      quests: [],
+      skillPoints: 0,
+      unlockedSkills: [],
+      inventory: {},
+      activeView: "dashboard",
+      overlay: null,
+    }),
   addQuest: (quest) => set((state) => ({ quests: [...state.quests, quest] })),
   unlockSkill: (skillId, cost) => {
     let unlocked = false;
@@ -94,10 +105,33 @@ export const useHunterStore = create<HunterStore>()(
   }), {
     name: "ascend-user-profile",
     partialize: (state) => ({
+      hunter: state.hunter,
+      quests: state.quests,
       profile: state.profile,
       theme: state.theme,
       sound: state.sound,
+      skillPoints: state.skillPoints,
+      unlockedSkills: state.unlockedSkills,
+      inventory: state.inventory,
     }),
+    version: 2,
+    migrate: (persistedState, version) => {
+      if (version >= 2) return persistedState;
+      const persisted = persistedState as Partial<HunterStore>;
+      const profile =
+        persisted.profile?.email === "arin@example.com"
+          ? { name: "Hunter", email: "", avatarUrl: null }
+          : persisted.profile;
+      return {
+        ...persisted,
+        hunter: initialHunter,
+        quests: initialQuests,
+        profile,
+        skillPoints: 0,
+        unlockedSkills: [],
+        inventory: {},
+      };
+    },
     skipHydration: true,
   }),
 );

@@ -73,6 +73,7 @@ export function SignInForm() {
 export function SignUpForm() {
   const router = useRouter();
   const updateProfile = useHunterStore((state) => state.updateProfile);
+  const resetJourney = useHunterStore((state) => state.resetJourney);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -101,6 +102,7 @@ export function SignUpForm() {
     setSubmitting(true);
     try {
       const account = await createLocalAccount({ name: cleanName, email, password });
+      resetJourney();
       updateProfile({ name: account.name, email: account.email });
       router.push("/");
     } catch (reason) {

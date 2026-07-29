@@ -1,25 +1,26 @@
 "use client";
 
-import { ArrowRight, Flame, Footprints, Trophy } from "lucide-react";
+import { ArrowRight, Flame, Plus, Trophy } from "lucide-react";
 import { useHunterStore } from "@/store/use-hunter-store";
 import { StatCard } from "../stat-card";
 import { QuestCard } from "../quest-card";
 import { SectionHeading } from "../section-heading";
-import { heatmapData } from "@/lib/demo-data";
+import { emptyActivity } from "@/lib/initial-data";
 import type { StatKey } from "@/lib/game-logic/constants";
 
 export function Dashboard() {
   const hunter = useHunterStore((state) => state.hunter);
   const quests = useHunterStore((state) => state.quests);
+  const profile = useHunterStore((state) => state.profile);
   const setView = useHunterStore((state) => state.setView);
   const completed = quests.filter((quest) => quest.completed).length;
-  const dayPercent = Math.round((completed / quests.length) * 100);
+  const dayPercent = quests.length ? Math.round((completed / quests.length) * 100) : 0;
   const xpPercent = (hunter.xp / hunter.xpToNext) * 100;
 
   return (
     <>
       <section className="mb-7">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-[28px]">Good afternoon, Arin</h1>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-[28px]">Welcome, {profile.name || "Hunter"}</h1>
         <p className="mt-1.5 text-sm text-[var(--muted)]">Here&apos;s a simple look at today&apos;s progress.</p>
       </section>
 
@@ -67,6 +68,15 @@ export function Dashboard() {
             </div>
             <div className="grid gap-2">
               {quests.slice(0, 4).map((quest) => <QuestCard key={quest.id} quest={quest} />)}
+              {quests.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-[var(--line)] px-5 py-8 text-center">
+                  <p className="text-sm font-medium">No quests yet</p>
+                  <p className="mt-1 text-xs text-[var(--muted)]">Create your first quest to begin earning XP.</p>
+                  <button onClick={() => setView("quests")} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-medium text-white">
+                    <Plus size={13} /> Create a quest
+                  </button>
+                </div>
+              )}
             </div>
           </section>
         </div>
@@ -84,7 +94,7 @@ export function Dashboard() {
             <div className="mt-5 grid grid-cols-7 gap-2">
               {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
                 <div key={`${day}-${index}`} className="text-center">
-                  <div className={`mx-auto mb-1.5 grid size-7 place-items-center rounded-full text-[10px] ${index < 6 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>{index < 6 ? "✓" : "·"}</div>
+                  <div className="mx-auto mb-1.5 grid size-7 place-items-center rounded-full bg-slate-100 text-[10px] text-slate-400">·</div>
                   <span className="text-[9px] text-[var(--muted)]">{day}</span>
                 </div>
               ))}
@@ -93,23 +103,19 @@ export function Dashboard() {
 
           <section className="system-panel p-5">
             <div className="flex items-center gap-3">
-              <div className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-600"><Footprints size={18} /></div>
+              <div className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-600"><Plus size={18} /></div>
               <div>
-                <p className="text-sm font-semibold">Weekly challenge</p>
-                <p className="mt-0.5 text-[11px] text-[var(--muted)]">Run 20 km this week</p>
+                <p className="text-sm font-semibold">Your journey starts here</p>
+                <p className="mt-0.5 text-[11px] text-[var(--muted)]">Complete quests to build your first streak.</p>
               </div>
             </div>
-            <div className="mt-5 flex justify-between text-[11px]">
-              <span>12.4 of 20 km</span><span className="font-medium text-violet-600">62%</span>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full w-[62%] rounded-full bg-violet-500" /></div>
-            <p className="mt-4 text-[11px] text-[var(--muted)]">Complete it to earn 600 XP and a new title.</p>
+            <button onClick={() => setView("quests")} className="mt-5 w-full rounded-xl border border-[var(--line)] py-2.5 text-xs font-medium text-indigo-600">Go to quests</button>
           </section>
 
           <section className="system-panel p-5">
             <SectionHeading title="Recent activity" eyebrow="Last 12 weeks" />
             <div className="grid grid-flow-col grid-rows-7 gap-1">
-              {heatmapData.map((value, index) => (
+              {emptyActivity.map((value, index) => (
                 <div key={index} className="aspect-square min-h-2 rounded-[3px]" style={{ background: value === 0 ? "#eef0ed" : `rgba(61, 155, 114, ${0.18 + value * 0.2})` }} />
               ))}
             </div>

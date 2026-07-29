@@ -20,7 +20,11 @@ export function QuestCard({ quest, expanded = false }: { quest: Quest; expanded?
       const response = await fetch("/api/quests/complete", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ questId: quest.id, snapshot: hunter }),
+        body: JSON.stringify({
+          questId: quest.id,
+          snapshot: hunter,
+          reward: { xp: quest.xp, stat: quest.stat },
+        }),
       });
       if (!response.ok) throw new Error("Could not complete this quest.");
       return (await response.json()) as CompletionResponse;

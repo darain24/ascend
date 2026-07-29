@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Flame,
   Focus,
-  Gift,
   Lock,
   Shield,
   Sparkles,
@@ -90,8 +89,9 @@ export function JourneyView() {
   const inventory = useHunterStore((state) => state.inventory);
   const unlockSkill = useHunterStore((state) => state.unlockSkill);
   const consumeItem = useHunterStore((state) => state.useItem);
-  const [bossProgress, setBossProgress] = useState(42);
   const [notice, setNotice] = useState<string | null>(null);
+  const currentRankIndex = ranks.findIndex((item) => item.rank === hunter.rank);
+  const nextRank = ranks[currentRankIndex + 1];
 
   function showNotice(message: string) {
     setNotice(message);
@@ -104,12 +104,6 @@ export function JourneyView() {
 
   function handleUseItem(id: string, title: string) {
     if (consumeItem(id)) showNotice(`${title} used`);
-  }
-
-  function trainBoss() {
-    const next = Math.min(100, bossProgress + 14);
-    setBossProgress(next);
-    showNotice(next === 100 ? "Weekly boss cleared — reward unlocked" : "Training logged");
   }
 
   return (
@@ -133,7 +127,9 @@ export function JourneyView() {
                 <p className="text-sm font-semibold">Rank progression</p>
                 <p className="mt-1 text-[11px] text-[var(--muted)]">You are Rank {hunter.rank}, Level {hunter.level}</p>
               </div>
-              <span className="rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-medium text-indigo-700">14 levels to Rank C</span>
+              <span className="rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-medium text-indigo-700">
+                {nextRank ? `${Number.parseInt(nextRank.level) - hunter.level} levels to Rank ${nextRank.rank}` : "Highest rank reached"}
+              </span>
             </div>
             <div className="mt-7 flex items-center">
               {ranks.map(({ rank, level }, index) => {
@@ -190,19 +186,13 @@ export function JourneyView() {
           <section className="system-panel overflow-hidden p-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[10px] font-medium text-rose-600">Weekly boss</p>
-                <h2 className="mt-1 text-base font-semibold">The Resistance</h2>
-                <p className="mt-1 text-[11px] text-[var(--muted)]">Complete four demanding sessions this week.</p>
+                <p className="text-[10px] font-medium text-rose-600">Weekly challenge</p>
+                <h2 className="mt-1 text-base font-semibold">No active challenge</h2>
+                <p className="mt-1 text-[11px] text-[var(--muted)]">Your first challenge will appear after you build some quest history.</p>
               </div>
               <div className="grid size-10 place-items-center rounded-xl bg-rose-50 text-rose-600"><Swords size={18} /></div>
             </div>
-            <div className="mt-6 flex justify-between text-[11px]"><span>Progress</span><span className="font-medium">{bossProgress}%</span></div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-rose-50"><motion.div className="h-full rounded-full bg-rose-500" animate={{ width: `${bossProgress}%` }} /></div>
-            <div className="mt-5 rounded-xl bg-[var(--bg)] p-3">
-              <div className="flex items-center gap-2"><Gift size={14} className="text-violet-600" /><span className="text-[10px] font-medium">Clear reward</span></div>
-              <p className="mt-1.5 text-[10px] text-[var(--muted)]">800 XP · 1 skill point · “Unshaken” title</p>
-            </div>
-            <button disabled={bossProgress === 100} onClick={trainBoss} className="mt-4 w-full rounded-xl bg-slate-900 py-2.5 text-xs font-medium text-white disabled:bg-emerald-600">{bossProgress === 100 ? "Challenge complete" : "Log a training session"}</button>
+            <div className="mt-6 h-2 overflow-hidden rounded-full bg-rose-50" />
           </section>
 
           <section className="system-panel p-5">
@@ -228,17 +218,9 @@ export function JourneyView() {
 
       <section className="system-panel mt-5 p-5 sm:p-6">
         <h2 className="text-sm font-semibold">Recent journey</h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          {[
-            ["Today", "Completed Scholar’s Focus", "+60 XP"],
-            ["Yesterday", "Reached a 14-day streak", "Milestone"],
-            ["Jul 25", "Unlocked Steady Start", "Skill"],
-          ].map(([date, activity, reward]) => (
-            <div key={activity} className="flex items-start gap-3">
-              <div className="mt-1 size-2 rounded-full bg-indigo-400" />
-              <div><p className="text-[10px] text-[var(--muted)]">{date}</p><p className="mt-1 text-xs font-medium">{activity}</p><p className="mt-1 text-[10px] text-indigo-600">{reward}</p></div>
-            </div>
-          ))}
+        <div className="mt-5 rounded-2xl border border-dashed border-[var(--line)] px-5 py-8 text-center">
+          <p className="text-sm font-medium">Your journey is new</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">Completed quests, unlocked skills, and milestones will appear here.</p>
         </div>
       </section>
 

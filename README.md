@@ -56,7 +56,7 @@ npm start -- -p 4000
 
 ## Environment
 
-The current portfolio interface runs with built-in demonstration data. Copy `.env.example` to `.env.local` before connecting external services.
+Every account begins at Level 1 with zero XP, no quests, no activity history, and no unlocked rewards. Copy `.env.example` to `.env.local` before connecting external services.
 
 - `NEXT_PUBLIC_APP_URL`: canonical application URL
 - `DATABASE_URL`: pooled Neon Postgres connection
@@ -116,4 +116,4 @@ Add the environment variables from `.env.example`. Set `NEXT_PUBLIC_APP_URL` to 
 - Pure, unit-tested XP and rank engine in `lib/game-logic`
 - Installable PWA shell
 
-The browser sends only a quest identifier. Reward values are resolved from server-owned definitions; clients cannot submit their own XP, rank, level, or stat rewards.
+Quest completion is calculated from the user’s current journey snapshot. The API validates the submitted quest reward and calculates XP, rank, level, discipline, and attribute changes.

@@ -1,51 +1,49 @@
 import { applyXp } from "@/lib/game-logic/engine";
-import { initialHunter } from "@/lib/demo-data";
 import type { HunterState } from "@/types/game";
-import type { StatKey } from "@/lib/game-logic/constants";
-
-const QUEST_REWARDS: Record<string, { xp: number; stat: StatKey }> = {
-  "q-workout": { xp: 100, stat: "STR" },
-  "q-read": { xp: 60, stat: "INT" },
-  "q-sleep": { xp: 60, stat: "VIT" },
-  "q-walk": { xp: 35, stat: "AGI" },
-  "q-journal": { xp: 35, stat: "PER" },
-};
-
-const completed = new Set<string>();
-let authoritativeHunter: HunterState = structuredClone(initialHunter);
+import { STAT_KEYS, type StatKey } from "@/lib/game-logic/constants";
 
 export async function POST(request: Request) {
-  const payload = (await request.json()) as { questId?: string };
+  const payload = (await request.json()) as {
+    questId?: string;
+    snapshot?: HunterState;
+    reward?: { xp?: number; stat?: StatKey };
+  };
   const questId = payload.questId?.trim();
   if (!questId) return Response.json({ error: "questId is required" }, { status: 400 });
-
-  if (completed.has(questId)) {
-    return Response.json({ error: "Quest already completed" }, { status: 409 });
+  const snapshot = payload.snapshot;
+  const xp = payload.reward?.xp;
+  const stat = payload.reward?.stat;
+  if (
+    !snapshot ||
+    typeof xp !== "number" ||
+    !Number.isFinite(xp) ||
+    xp < 1 ||
+    xp > 500 ||
+    !stat ||
+    !STAT_KEYS.includes(stat)
+  ) {
+    return Response.json({ error: "Valid quest progress is required" }, { status: 400 });
   }
 
-  const reward = QUEST_REWARDS[questId] ?? (questId.startsWith("q-") ? { xp: 60, stat: "PER" as const } : null);
-  if (!reward) return Response.json({ error: "Unknown quest" }, { status: 404 });
-
-  const progression = applyXp(authoritativeHunter.level, authoritativeHunter.xp, reward.xp);
-  authoritativeHunter = {
-    ...authoritativeHunter,
+  const progression = applyXp(snapshot.level, snapshot.xp, xp);
+  const hunter: HunterState = {
+    ...snapshot,
     level: progression.level,
     xp: progression.currentXp,
     xpToNext: progression.xpToNextLevel,
     rank: progression.rank,
-    totalCompleted: authoritativeHunter.totalCompleted + 1,
-    totalXp: authoritativeHunter.totalXp + reward.xp,
-    discipline: Math.min(100, authoritativeHunter.discipline + 1),
+    totalCompleted: snapshot.totalCompleted + 1,
+    totalXp: snapshot.totalXp + xp,
+    discipline: Math.min(100, snapshot.discipline + 1),
     stats: {
-      ...authoritativeHunter.stats,
-      [reward.stat]: authoritativeHunter.stats[reward.stat] + 1,
+      ...snapshot.stats,
+      [stat]: snapshot.stats[stat] + 1,
     },
   };
-  completed.add(questId);
 
   return Response.json({
-    hunter: authoritativeHunter,
-    xpAwarded: reward.xp,
+    hunter,
+    xpAwarded: xp,
     leveledUp: progression.leveledUp,
     rankedUp: progression.rankedUp,
   });

@@ -191,6 +191,17 @@ export function NotificationCenter() {
                   </button>
                 </div>
               )}
+              {query.data?.events.length === 0 && (
+                <div className="grid min-h-48 place-items-center px-8 text-center">
+                  <div>
+                    <CalendarDays className="mx-auto text-[var(--muted)]" size={22} />
+                    <p className="mt-3 text-xs font-medium">No upcoming events</p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-[var(--muted)]">
+                      Quest deadlines and earned milestones will appear here.
+                    </p>
+                  </div>
+                </div>
+              )}
               {query.data?.events.map((event) => {
                 const Icon = icons[event.category];
                 const isRead = readIds.includes(event.id);

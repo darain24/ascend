@@ -3,12 +3,13 @@
 import { Area, AreaChart, CartesianGrid, PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CheckCircle2, Flame, Sparkles, Trophy } from "lucide-react";
 import { useHunterStore } from "@/store/use-hunter-store";
-import { heatmapData, xpHistory } from "@/lib/demo-data";
+import { emptyActivity } from "@/lib/initial-data";
 import type { StatKey } from "@/lib/game-logic/constants";
 
 export function AnalyticsView() {
   const hunter = useHunterStore((state) => state.hunter);
   const radar = (Object.keys(hunter.stats) as StatKey[]).map((stat) => ({ stat, value: hunter.stats[stat] }));
+  const xpHistory = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => ({ day, xp: 0 }));
   const summaries = [
     { icon: Flame, label: "Current streak", value: `${hunter.streak} days`, color: "bg-orange-50 text-orange-500" },
     { icon: Trophy, label: "Personal best", value: `${hunter.longestStreak} days`, color: "bg-violet-50 text-violet-600" },
@@ -66,7 +67,7 @@ export function AnalyticsView() {
         <h2 className="text-sm font-semibold">Consistency</h2>
         <p className="mt-1 text-[11px] text-[var(--muted)]">Activity over the last 84 days</p>
         <div className="mt-5 grid grid-flow-col grid-rows-7 gap-1.5">
-          {heatmapData.map((value, index) => <div key={index} className="aspect-square rounded-[4px]" style={{ background: value === 0 ? "#eef0ed" : `rgba(61, 155, 114, ${0.18 + value * 0.2})` }} />)}
+          {emptyActivity.map((value, index) => <div key={index} className="aspect-square rounded-[4px]" style={{ background: value === 0 ? "#eef0ed" : `rgba(61, 155, 114, ${0.18 + value * 0.2})` }} />)}
         </div>
       </section>
     </>
