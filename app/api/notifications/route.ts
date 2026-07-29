@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 const PROFILE_COOKIE = "ascend_profile";
 
 export async function GET() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const existingProfileId = cookieStore.get(PROFILE_COOKIE)?.value;
   const profileId = existingProfileId ?? randomUUID();
   const response = NextResponse.json({ profileId, events: [] });

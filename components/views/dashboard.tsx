@@ -1,12 +1,14 @@
 "use client";
 
-import { ArrowRight, Flame, Plus, Trophy } from "lucide-react";
+import { ArrowRight, Flame, Plus, Sparkles, Trophy } from "lucide-react";
 import { useHunterStore } from "@/store/use-hunter-store";
 import { StatCard } from "../stat-card";
 import { QuestCard } from "../quest-card";
 import { SectionHeading } from "../section-heading";
 import { ActivityHeatmap } from "../activity-heatmap";
 import type { StatKey } from "@/lib/game-logic/constants";
+import { buildActivityDays } from "@/lib/activity";
+import { estimateDaysToTarget } from "@/lib/analytics/insights";
 
 export function Dashboard() {
   const hunter = useHunterStore((state) => state.hunter);
@@ -17,6 +19,11 @@ export function Dashboard() {
   const completed = quests.filter((quest) => quest.completed).length;
   const dayPercent = quests.length ? Math.round((completed / quests.length) * 100) : 0;
   const xpPercent = (hunter.xp / hunter.xpToNext) * 100;
+  const eta = estimateDaysToTarget(
+    buildActivityDays(activity, 14).map((day) => day.xp),
+    hunter.xp,
+    hunter.xpToNext,
+  );
 
   return (
     <>
@@ -104,10 +111,19 @@ export function Dashboard() {
 
           <section className="system-panel p-5">
             <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><Sparkles size={18} /></div>
+              <div><p className="text-sm font-semibold">Hunter&apos;s Report</p><p className="mt-0.5 text-[11px] text-[var(--muted)]">Your first weekly AI review will appear after a full week of activity.</p></div>
+            </div>
+          </section>
+
+          <section className="system-panel p-5">
+            <div className="flex items-center gap-3">
               <div className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-600"><Plus size={18} /></div>
               <div>
-                <p className="text-sm font-semibold">Your journey starts here</p>
-                <p className="mt-0.5 text-[11px] text-[var(--muted)]">Complete quests to build your first streak.</p>
+                <p className="text-sm font-semibold">Progress forecast</p>
+                <p className="mt-0.5 text-[11px] text-[var(--muted)]">
+                  {eta === null ? "Complete quests to calculate your pace." : eta === 0 ? "Your next level is ready." : `At your current pace, the next level is about ${eta} ${eta === 1 ? "day" : "days"} away.`}
+                </p>
               </div>
             </div>
             <button onClick={() => setView("quests")} className="mt-5 w-full rounded-xl border border-[var(--line)] py-2.5 text-xs font-medium text-indigo-600">Go to quests</button>

@@ -5,6 +5,7 @@ import { CheckCircle2, Flame, Sparkles, Trophy } from "lucide-react";
 import { useHunterStore } from "@/store/use-hunter-store";
 import { ActivityHeatmap } from "../activity-heatmap";
 import { buildActivityDays } from "@/lib/activity";
+import { correlationInsight } from "@/lib/analytics/insights";
 import type { StatKey } from "@/lib/game-logic/constants";
 
 export function AnalyticsView() {
@@ -15,6 +16,11 @@ export function AnalyticsView() {
     day: new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(day.date),
     xp: day.xp,
   }));
+  const correlationDays = buildActivityDays(activity).map((day) => ({
+    date: day.dateKey,
+    stats: Object.entries(day.stats ?? {}).filter(([, count]) => count > 0).map(([stat]) => stat),
+  }));
+  const insight = correlationInsight(correlationDays, "INT", "VIT");
   const summaries = [
     { icon: Flame, label: "Current streak", value: `${hunter.streak} days`, color: "bg-orange-50 text-orange-500" },
     { icon: Trophy, label: "Personal best", value: `${hunter.longestStreak} days`, color: "bg-violet-50 text-violet-600" },
@@ -72,6 +78,14 @@ export function AnalyticsView() {
         <h2 className="text-sm font-semibold">Consistency</h2>
         <p className="mt-1 text-[11px] text-[var(--muted)]">Activity over the last 84 days</p>
         <div className="mt-5"><ActivityHeatmap activity={activity} /></div>
+      </section>
+      <section className="system-panel mt-5 p-4 sm:p-6">
+        <h2 className="text-sm font-semibold">Correlation insight</h2>
+        <p className="mt-2 text-xs leading-6 text-[var(--muted)]">
+          {hunter.totalCompleted < 5
+            ? "Complete at least five quests across different days to reveal reliable habit correlations."
+            : `You complete INT quests ${Math.abs(insight.liftPercent)}% ${insight.liftPercent >= 0 ? "more" : "less"} often on days that also include VIT activity.`}
+        </p>
       </section>
     </>
   );

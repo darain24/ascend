@@ -154,6 +154,7 @@ export function ProfileView() {
             <p className="mt-1 text-sm text-[var(--muted)]">{profile.email || "Add your email"}</p>
             <p className="mt-1 text-xs text-[var(--muted)]">Novice Hunter · Level {hunter.level}</p>
             <span className="mt-3 inline-flex rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-medium text-indigo-700">Rank {hunter.rank}</span>
+            {hunter.rebirthCount > 0 && <span className="ml-2 mt-3 inline-flex rounded-full bg-violet-50 px-3 py-1 text-[11px] font-medium text-violet-700">Rebirth {hunter.rebirthCount}</span>}
           </div>
           <div className="text-center sm:text-right">
             <p className="text-3xl font-semibold">{hunter.totalCompleted}</p>

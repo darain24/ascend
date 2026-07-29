@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { initialHunter, initialQuests } from "@/lib/initial-data";
 import { addQuestCompletion, type ActivityHistory } from "@/lib/activity";
+import { rebirthState, type HunterClass } from "@/lib/game-logic/advanced";
 import type { HunterState, Quest } from "@/types/game";
 
 type HunterProfile = {
@@ -18,7 +19,7 @@ type HunterStore = {
   profile: HunterProfile;
   theme: "dark" | "light";
   sound: boolean;
-  activeView: "dashboard" | "quests" | "journey" | "analytics" | "profile" | "settings";
+  activeView: "dashboard" | "quests" | "journey" | "analytics" | "system" | "guild" | "profile" | "settings";
   skillPoints: number;
   unlockedSkills: string[];
   inventory: Record<string, number>;
@@ -32,6 +33,8 @@ type HunterStore = {
   addQuest: (quest: Quest) => void;
   unlockSkill: (skillId: string, cost: number) => boolean;
   useItem: (itemId: string) => boolean;
+  chooseClass: (hunterClass: HunterClass) => boolean;
+  rebirth: () => boolean;
   setOverlay: (overlay: HunterStore["overlay"]) => void;
   applyCompletion: (questId: string, next: HunterState) => void;
 };
@@ -98,6 +101,35 @@ export const useHunterStore = create<HunterStore>()(
     });
     return used;
   },
+  chooseClass: (hunterClass) => {
+    let selected = false;
+    set((state) => {
+      if (state.hunter.level < 10 || state.hunter.hunterClass) return state;
+      selected = true;
+      return { hunter: { ...state.hunter, hunterClass } };
+    });
+    return selected;
+  },
+  rebirth: () => {
+    let completed = false;
+    set((state) => {
+      if (state.hunter.rank !== "S") return state;
+      const next = rebirthState(state.hunter);
+      completed = true;
+      return {
+        hunter: {
+          ...state.hunter,
+          level: next.level,
+          xp: next.currentXp,
+          xpToNext: next.xpToNextLevel,
+          rank: next.rank,
+          rebirthCount: next.rebirthCount,
+          globalXpMultiplier: next.globalXpMultiplier,
+        },
+      };
+    });
+    return completed;
+  },
   setOverlay: (overlay) => set({ overlay }),
   applyCompletion: (questId, hunter) =>
     set((state) => {
@@ -108,7 +140,7 @@ export const useHunterStore = create<HunterStore>()(
           quest.id === questId ? { ...quest, completed: true } : quest,
         ),
         activity: completedQuest
-          ? addQuestCompletion(state.activity, completedQuest.xp)
+          ? addQuestCompletion(state.activity, completedQuest.xp, new Date(), completedQuest.stat)
           : state.activity,
       };
     }),

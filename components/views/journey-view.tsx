@@ -89,6 +89,8 @@ export function JourneyView() {
   const inventory = useHunterStore((state) => state.inventory);
   const unlockSkill = useHunterStore((state) => state.unlockSkill);
   const consumeItem = useHunterStore((state) => state.useItem);
+  const chooseClass = useHunterStore((state) => state.chooseClass);
+  const rebirth = useHunterStore((state) => state.rebirth);
   const [notice, setNotice] = useState<string | null>(null);
   const currentRankIndex = ranks.findIndex((item) => item.rank === hunter.rank);
   const nextRank = ranks[currentRankIndex + 1];
@@ -223,6 +225,24 @@ export function JourneyView() {
           <p className="mt-1 text-xs text-[var(--muted)]">Completed quests, unlocked skills, and milestones will appear here.</p>
         </div>
       </section>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <section className="system-panel p-5 sm:p-6">
+          <h2 className="text-sm font-semibold">Hunter class</h2>
+          <p className="mt-1 text-[11px] text-[var(--muted)]">{hunter.hunterClass ? `${hunter.hunterClass.toLowerCase()} class active` : hunter.level < 10 ? `Unlocks at Level 10 · ${10 - hunter.level} levels remaining` : "Choose once. Your matching stat earns 15% bonus XP."}</p>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {(["ASSASSIN", "MAGE", "TANK"] as const).map((hunterClass) => (
+              <button key={hunterClass} disabled={hunter.level < 10 || Boolean(hunter.hunterClass)} onClick={() => chooseClass(hunterClass)} className={`rounded-xl border px-2 py-3 text-[10px] font-medium disabled:cursor-not-allowed disabled:opacity-45 ${hunter.hunterClass === hunterClass ? "border-indigo-300 bg-indigo-50 text-indigo-700" : "border-[var(--line)]"}`}>{hunterClass.toLowerCase()}</button>
+            ))}
+          </div>
+        </section>
+        <section className="system-panel p-5 sm:p-6">
+          <h2 className="text-sm font-semibold">Rebirth</h2>
+          <p className="mt-1 text-[11px] leading-relaxed text-[var(--muted)]">S-rank hunters can restart at Level 1 and permanently add 5% to all future XP.</p>
+          <div className="mt-4 flex items-center justify-between rounded-xl bg-[var(--bg)] p-3"><span className="text-xs">Current multiplier</span><span className="text-xs font-semibold text-violet-600">×{hunter.globalXpMultiplier.toFixed(2)}</span></div>
+          <button disabled={hunter.rank !== "S"} onClick={rebirth} className="mt-3 w-full rounded-xl bg-slate-900 py-2.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">Begin rebirth</button>
+        </section>
+      </div>
 
       <AnimatePresence>
         {notice && (

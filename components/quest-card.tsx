@@ -36,6 +36,22 @@ export function QuestCard({ quest, expanded = false }: { quest: Quest; expanded?
         title: data.rankedUp ? `You reached rank ${data.hunter.rank}` : data.leveledUp ? `Level ${data.hunter.level}` : "Quest complete",
         subtitle: `You earned ${data.xpAwarded} XP and improved ${quest.stat}.`,
       });
+      void fetch("/api/ai/narrate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          context: `${quest.title} completed. ${data.xpAwarded} XP awarded to ${quest.stat}. Level ${data.hunter.level}, Rank ${data.hunter.rank}.`,
+        }),
+      })
+        .then((response) => response.json() as Promise<{ message?: string | null }>)
+        .then(({ message }) => {
+          if (!message || !useHunterStore.getState().overlay) return;
+          useHunterStore.getState().setOverlay({
+            ...useHunterStore.getState().overlay!,
+            subtitle: message,
+          });
+        })
+        .catch(() => undefined);
     },
   });
 

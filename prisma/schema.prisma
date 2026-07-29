@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -38,51 +38,85 @@ enum Stat {
   PER
 }
 
+enum GuildRole {
+  OWNER
+  MEMBER
+}
+
+enum HunterClass {
+  ASSASSIN
+  MAGE
+  TANK
+}
+
+enum ItemType {
+  TITLE
+  AVATAR_FRAME
+  ACCENT_SKIN
+}
+
 model User {
-  id              String            @id @default(cuid())
-  name            String?
-  email           String?           @unique
-  emailVerified   DateTime?
-  image           String?
-  passwordHash    String?
-  displayName     String?
-  avatarUrl       String?
-  timezone        String            @default("UTC")
-  title           String            @default("Novice Hunter")
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  accounts        Account[]
-  sessions        Session[]
-  stats           UserStats?
-  quests          Quest[]
-  questLogs       QuestLog[]
-  statHistory     StatHistory[]
-  achievements    UserAchievement[]
-  penalties       PenaltyLog[]
+  id                String             @id @default(cuid())
+  name              String?
+  email             String?            @unique
+  emailVerified     DateTime?
+  image             String?
+  passwordHash      String?
+  displayName       String?
+  avatarUrl         String?
+  timezone          String             @default("UTC")
+  title             String             @default("Novice Hunter")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  accounts          Account[]
+  sessions          Session[]
+  stats             UserStats?
+  quests            Quest[]
+  questLogs         QuestLog[]
+  statHistory       StatHistory[]
+  achievements      UserAchievement[]
+  penalties         PenaltyLog[]
+  weeklyReports     WeeklyReport[]
+  journalEntries    JournalEntry[]
+  guildMemberships  GuildMember[]
+  createdGuilds     Guild[]            @relation("GuildOwner")
+  raidContributions RaidContribution[]
+  skills            UserSkill[]
+  items             UserItem[]
+  auditLogs         AuditLog[]
+  pushSubscriptions PushSubscription[]
 }
 
 model UserStats {
-  id               String @id @default(cuid())
-  userId           String @unique
-  level            Int    @default(1)
-  currentXp        Int    @default(0)
-  xpToNextLevel    Int    @default(100)
-  rank             Rank   @default(E)
-  str              Int    @default(1)
-  vit              Int    @default(1)
-  int              Int    @default(1)
-  agi              Int    @default(1)
-  per              Int    @default(1)
-  disciplineMeter  Int    @default(100)
-  currentStreak    Int    @default(0)
-  longestStreak    Int    @default(0)
-  totalXpEarned    Int    @default(0)
-  totalCompleted   Int    @default(0)
-  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String       @id @default(cuid())
+  userId             String       @unique
+  level              Int          @default(1)
+  currentXp          Int          @default(0)
+  xpToNextLevel      Int          @default(100)
+  rank               Rank         @default(E)
+  str                Int          @default(1)
+  vit                Int          @default(1)
+  int                Int          @default(1)
+  agi                Int          @default(1)
+  per                Int          @default(1)
+  disciplineMeter    Int          @default(100)
+  currentStreak      Int          @default(0)
+  longestStreak      Int          @default(0)
+  totalXpEarned      Int          @default(0)
+  totalCompleted     Int          @default(0)
+  hunterClass        HunterClass?
+  rebirthCount       Int          @default(0)
+  globalXpMultiplier Float        @default(1)
+  skillPoints        Int          @default(0)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([level, totalXpEarned])
+  @@index([rank, currentXp])
+  @@index([currentStreak])
 }
 
 model Quest {
-  id          String      @id @default(cuid())
+  id          String     @id @default(cuid())
   userId      String
   title       String
   description String?
@@ -90,12 +124,12 @@ model Quest {
   type        QuestType
   difficulty  Difficulty
   xpReward    Int
-  active      Boolean     @default(true)
+  active      Boolean    @default(true)
   recurrence  String?
   targetValue Float?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   logs        QuestLog[]
 
   @@index([userId, active])
@@ -188,4 +222,187 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model WeeklyReport {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String
+  weekStart DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@index([userId, createdAt])
+}
+
+model JournalEntry {
+  id        String                 @id @default(cuid())
+  userId    String
+  content   String
+  embedding Unsupported("vector")?
+  createdAt DateTime               @default(now())
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Guild {
+  id         String        @id @default(cuid())
+  ownerId    String
+  name       String
+  icon       String        @default("shield")
+  inviteCode String        @unique
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  owner      User          @relation("GuildOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members    GuildMember[]
+  raidBosses RaidBoss[]
+
+  @@index([ownerId])
+  @@index([name])
+}
+
+model GuildMember {
+  guildId  String
+  userId   String
+  role     GuildRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+  guild    Guild     @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([guildId, userId])
+  @@index([userId])
+  @@index([guildId, joinedAt])
+}
+
+model RaidBoss {
+  id            String             @id @default(cuid())
+  guildId       String
+  name          String
+  maxHp         Int
+  currentHp     Int
+  startsAt      DateTime
+  endsAt        DateTime
+  defeated      Boolean            @default(false)
+  createdAt     DateTime           @default(now())
+  guild         Guild              @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  contributions RaidContribution[]
+
+  @@index([guildId, startsAt, endsAt])
+  @@index([guildId, defeated])
+}
+
+model RaidContribution {
+  id          String   @id @default(cuid())
+  raidBossId  String
+  userId      String
+  damageDealt Int
+  createdAt   DateTime @default(now())
+  raidBoss    RaidBoss @relation(fields: [raidBossId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([raidBossId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model Skill {
+  id                  String      @id @default(cuid())
+  key                 String      @unique
+  title               String
+  description         String
+  cost                Int
+  perkType            String
+  perkValue           Float
+  prerequisiteSkillId String?
+  prerequisite        Skill?      @relation("SkillTree", fields: [prerequisiteSkillId], references: [id])
+  dependents          Skill[]     @relation("SkillTree")
+  users               UserSkill[]
+
+  @@index([prerequisiteSkillId])
+}
+
+model UserSkill {
+  userId     String
+  skillId    String
+  unlockedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skillId])
+  @@index([skillId])
+}
+
+model Item {
+  id          String     @id @default(cuid())
+  key         String     @unique
+  name        String
+  description String
+  type        ItemType
+  value       String
+  users       UserItem[]
+
+  @@index([type])
+}
+
+model UserItem {
+  userId     String
+  itemId     String
+  equipped   Boolean  @default(false)
+  acquiredAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item       Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([userId, itemId])
+  @@index([userId, equipped])
+  @@index([itemId])
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  userId         String
+  action         String
+  delta          Int
+  resultingState Json
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, enabled])
+}
+
+model JobRun {
+  id         String    @id @default(cuid())
+  job        String
+  status     String
+  detail     Json?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  @@index([job, startedAt])
+  @@index([status, startedAt])
+}
+
+model SystemError {
+  id        String   @id @default(cuid())
+  source    String
+  message   String
+  detail    Json?
+  createdAt DateTime @default(now())
+
+  @@index([source, createdAt])
 }

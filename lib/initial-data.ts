@@ -11,6 +11,9 @@ export const initialHunter: HunterState = {
   totalCompleted: 0,
   totalXp: 0,
   stats: { STR: 0, VIT: 0, INT: 0, AGI: 0, PER: 0 },
+  hunterClass: null,
+  rebirthCount: 0,
+  globalXpMultiplier: 1,
 };
 
 export const initialQuests: Quest[] = [];

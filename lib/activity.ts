@@ -1,6 +1,9 @@
+import type { StatKey } from "./game-logic/constants";
+
 export type DailyActivity = {
   completed: number;
   xp: number;
+  stats?: Partial<Record<StatKey, number>>;
 };
 
 export type ActivityHistory = Record<string, DailyActivity>;
@@ -22,6 +25,7 @@ export function addQuestCompletion(
   history: ActivityHistory,
   xp: number,
   completedAt = new Date(),
+  stat?: StatKey,
 ): ActivityHistory {
   const dateKey = localDateKey(completedAt);
   const current = history[dateKey] ?? { completed: 0, xp: 0 };
@@ -30,6 +34,9 @@ export function addQuestCompletion(
     [dateKey]: {
       completed: current.completed + 1,
       xp: current.xp + Math.max(0, xp),
+      ...(stat
+        ? { stats: { ...current.stats, [stat]: (current.stats?.[stat] ?? 0) + 1 } }
+        : {}),
     },
   };
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { LogOut, Moon, SlidersHorizontal } from "lucide-react";
+import { Bell, Download, LogOut, Moon, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { signOutLocalAccount } from "@/lib/local-auth";
 import { useHunterStore } from "@/store/use-hunter-store";
@@ -11,6 +12,44 @@ export function SettingsView() {
   const profile = useHunterStore((state) => state.profile);
   const theme = useHunterStore((state) => state.theme);
   const setTheme = useHunterStore((state) => state.setTheme);
+  const [pushNotice, setPushNotice] = useState("");
+
+  function download(format: "json" | "csv") {
+    const state = useHunterStore.getState();
+    const payload = {
+      profile: state.profile,
+      hunter: state.hunter,
+      quests: state.quests,
+      activity: state.activity,
+      unlockedSkills: state.unlockedSkills,
+      inventory: state.inventory,
+    };
+    let content: string;
+    let type: string;
+    if (format === "json") {
+      content = JSON.stringify(payload, null, 2);
+      type = "application/json";
+    } else {
+      const rows = [["date", "questsCompleted", "xp"], ...Object.entries(state.activity).map(([date, value]) => [date, value.completed, value.xp])];
+      content = rows.map((row) => row.join(",")).join("\n");
+      type = "text/csv";
+    }
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `ascend-export.${format}`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function enablePush() {
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      setPushNotice("Push notifications are not supported in this browser.");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setPushNotice(permission === "granted" ? "Notifications enabled on this device." : "Notification permission was not granted.");
+  }
 
   function signOut() {
     signOutLocalAccount();
@@ -49,6 +88,21 @@ export function SettingsView() {
             >
               {theme === "light" ? "Use dark" : "Use light"}
             </button>
+          </div>
+          <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--line)] p-4">
+            <div className="flex items-center gap-3">
+              <Bell size={16} className="text-[var(--muted)]" />
+              <div><p className="text-xs font-medium">Push reminders</p><p className="mt-0.5 text-[10px] text-[var(--muted)]">Daily quests and penalty warnings.</p></div>
+            </div>
+            <button onClick={enablePush} className="rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium">Enable</button>
+          </div>
+          {pushNotice && <p className="mt-2 text-[10px] text-[var(--muted)]">{pushNotice}</p>}
+          <div className="mt-3 rounded-xl border border-[var(--line)] p-4">
+            <div className="flex items-center gap-3"><Download size={16} className="text-[var(--muted)]" /><div><p className="text-xs font-medium">Export your data</p><p className="mt-0.5 text-[10px] text-[var(--muted)]">Download progress without sending it elsewhere.</p></div></div>
+            <div className="mt-3 flex gap-2">
+              <button onClick={() => download("json")} className="rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium">JSON</button>
+              <button onClick={() => download("csv")} className="rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium">CSV</button>
+            </div>
           </div>
           <button
             onClick={signOut}

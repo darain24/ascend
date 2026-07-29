@@ -24,4 +24,7 @@ export type HunterState = {
   totalCompleted: number;
   totalXp: number;
   stats: Record<StatKey, number>;
+  hunterClass: "ASSASSIN" | "MAGE" | "TANK" | null;
+  rebirthCount: number;
+  globalXpMultiplier: number;
 };

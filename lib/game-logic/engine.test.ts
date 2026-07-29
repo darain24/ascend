@@ -6,6 +6,16 @@ import {
   buildActivityDays,
   localDateKey,
 } from "../activity";
+import {
+  calculateXpAward,
+  canUnlockSkill,
+  raidDamageFromXp,
+  rebirthState,
+} from "./advanced";
+import { correlationInsight, estimateDaysToTarget } from "../analytics/insights";
+import { cosineSimilarity, localEmbedding } from "../ai/embeddings";
+import { verifyGitHubSignature } from "../security/webhook";
+import { createHmac } from "crypto";
 
 describe("game engine", () => {
   it("starts every new journey with no progress or quests", () => {
@@ -66,5 +76,61 @@ describe("game engine", () => {
       currentXp: 180,
       leveledUp: true,
     });
+  });
+
+  it("applies class, skill, and rebirth XP multipliers", () => {
+    expect(calculateXpAward({
+      baseXp: 100,
+      stat: "AGI",
+      hunterClass: "ASSASSIN",
+      globalMultiplier: 1.1,
+      skillMultiplier: 1.1,
+    })).toBe(139);
+  });
+
+  it("enforces skill prerequisites and point costs", () => {
+    expect(canUnlockSkill({ cost: 2, availablePoints: 2, prerequisiteSkillId: "root", unlockedSkillIds: ["root"] })).toBe(true);
+    expect(canUnlockSkill({ cost: 2, availablePoints: 1, prerequisiteSkillId: "root", unlockedSkillIds: ["root"] })).toBe(false);
+  });
+
+  it("handles raid damage and valid S-rank rebirth", () => {
+    expect(raidDamageFromXp(60, 1.5)).toBe(90);
+    expect(rebirthState({ rank: "S", rebirthCount: 1, globalXpMultiplier: 1.05 })).toMatchObject({
+      level: 1,
+      rank: "E",
+      rebirthCount: 2,
+      globalXpMultiplier: 1.1,
+    });
+  });
+
+  it("estimates rank ETA from weighted recent XP pace", () => {
+    expect(estimateDaysToTarget([0, 50, 100], 100, 500)).toBe(6);
+    expect(estimateDaysToTarget([0, 0], 0, 100)).toBeNull();
+  });
+
+  it("calculates transparent co-occurrence correlations", () => {
+    const insight = correlationInsight([
+      { date: "1", stats: ["INT", "VIT"] },
+      { date: "2", stats: ["INT", "VIT"] },
+      { date: "3", stats: ["INT"] },
+      { date: "4", stats: [] },
+    ], "INT", "VIT");
+    expect(insight.withRate).toBe(1);
+    expect(insight.withoutRate).toBe(0.5);
+    expect(insight.liftPercent).toBe(100);
+  });
+
+  it("retrieves semantically overlapping local journal vectors", () => {
+    const related = cosineSimilarity(localEmbedding("morning run felt strong"), localEmbedding("run workout"));
+    const unrelated = cosineSimilarity(localEmbedding("morning run felt strong"), localEmbedding("binary search trees"));
+    expect(related).toBeGreaterThan(unrelated);
+  });
+
+  it("verifies GitHub webhook signatures with timing-safe comparison", () => {
+    const body = JSON.stringify({ ref: "refs/heads/main" });
+    const secret = "test-secret";
+    const signature = `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`;
+    expect(verifyGitHubSignature(body, signature, secret)).toBe(true);
+    expect(verifyGitHubSignature(body, "sha256=bad", secret)).toBe(false);
   });
 });

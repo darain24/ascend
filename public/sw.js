@@ -15,3 +15,18 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   event.respondWith(fetch(event.request).catch(() => caches.match(event.request).then((response) => response || caches.match("/"))));
 });
+
+self.addEventListener("push", (event) => {
+  const payload = event.data ? event.data.json() : {};
+  event.waitUntil(self.registration.showNotification(payload.title || "Ascend", {
+    body: payload.body || "A quest needs your attention.",
+    icon: "/favicon.svg",
+    badge: "/favicon.svg",
+    data: { url: payload.url || "/" },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(self.clients.openWindow(event.notification.data?.url || "/"));
+});
