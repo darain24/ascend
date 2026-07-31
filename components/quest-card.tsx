@@ -9,7 +9,6 @@ import type { Quest, HunterState } from "@/types/game";
 type CompletionResponse = { hunter: HunterState; leveledUp: boolean; rankedUp: boolean; xpAwarded: number };
 
 export function QuestCard({ quest, expanded = false }: { quest: Quest; expanded?: boolean }) {
-  const hunter = useHunterStore((state) => state.hunter);
   const applyCompletion = useHunterStore((state) => state.applyCompletion);
   const setOverlay = useHunterStore((state) => state.setOverlay);
   const Icon = statIcons[quest.stat];
@@ -20,11 +19,7 @@ export function QuestCard({ quest, expanded = false }: { quest: Quest; expanded?
       const response = await fetch("/api/quests/complete", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          questId: quest.id,
-          snapshot: hunter,
-          reward: { xp: quest.xp, stat: quest.stat },
-        }),
+        body: JSON.stringify({ questId: quest.id }),
       });
       if (!response.ok) throw new Error("Could not complete this quest.");
       return (await response.json()) as CompletionResponse;

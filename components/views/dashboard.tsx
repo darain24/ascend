@@ -9,8 +9,10 @@ import { ActivityHeatmap } from "../activity-heatmap";
 import type { StatKey } from "@/lib/game-logic/constants";
 import { buildActivityDays } from "@/lib/activity";
 import { estimateDaysToTarget } from "@/lib/analytics/insights";
+import { useEffect, useState } from "react";
 
 export function Dashboard() {
+  const [report, setReport] = useState<{ content: string; weekStart: string } | null>(null);
   const hunter = useHunterStore((state) => state.hunter);
   const quests = useHunterStore((state) => state.quests);
   const profile = useHunterStore((state) => state.profile);
@@ -24,6 +26,13 @@ export function Dashboard() {
     hunter.xp,
     hunter.xpToNext,
   );
+
+  useEffect(() => {
+    void fetch("/api/reports/latest")
+      .then((response) => response.ok ? response.json() : { report: null })
+      .then((result: { report?: { content: string; weekStart: string } | null }) => setReport(result.report ?? null))
+      .catch(() => undefined);
+  }, []);
 
   return (
     <>
@@ -112,7 +121,7 @@ export function Dashboard() {
           <section className="system-panel p-5">
             <div className="flex items-center gap-3">
               <div className="grid size-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><Sparkles size={18} /></div>
-              <div><p className="text-sm font-semibold">Hunter&apos;s Report</p><p className="mt-0.5 text-[11px] text-[var(--muted)]">Your first weekly AI review will appear after a full week of activity.</p></div>
+              <div><p className="text-sm font-semibold">Hunter&apos;s Report</p><p className="mt-0.5 text-[11px] leading-5 text-[var(--muted)]">{report?.content || "Your first weekly AI review will appear after a full week of activity."}</p></div>
             </div>
           </section>
 

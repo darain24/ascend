@@ -5,7 +5,7 @@ const CLASSES = ["ASSASSIN", "MAGE", "TANK"] as const;
 
 export async function POST(request: Request) {
   try {
-    const userId = requestUserId(request);
+    const userId = await requestUserId();
     const { hunterClass } = (await request.json()) as { hunterClass?: (typeof CLASSES)[number] };
     if (!hunterClass || !CLASSES.includes(hunterClass)) {
       return Response.json({ error: "Invalid class" }, { status: 400 });

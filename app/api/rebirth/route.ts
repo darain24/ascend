@@ -4,7 +4,7 @@ import { authErrorResponse, requestUserId } from "@/lib/auth/request-user";
 
 export async function POST(request: Request) {
   try {
-    const userId = requestUserId(request);
+    const userId = await requestUserId();
     const result = await db.$transaction(async (tx) => {
       const stats = await tx.userStats.findUnique({ where: { userId } });
       if (!stats) throw new Error("Stats not found.");

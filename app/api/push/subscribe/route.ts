@@ -3,7 +3,7 @@ import { authErrorResponse, requestUserId } from "@/lib/auth/request-user";
 
 export async function POST(request: Request) {
   try {
-    const userId = requestUserId(request);
+    const userId = await requestUserId();
     const subscription = (await request.json()) as {
       endpoint?: string;
       keys?: { p256dh?: string; auth?: string };
@@ -19,5 +19,18 @@ export async function POST(request: Request) {
     return Response.json({ subscribed: true });
   } catch (error) {
     return authErrorResponse(error) ?? Response.json({ error: "Push subscription failed" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const userId = await requestUserId();
+    const { endpoint } = (await request.json()) as { endpoint?: string };
+    if (endpoint) {
+      await db.pushSubscription.updateMany({ where: { userId, endpoint }, data: { enabled: false } });
+    }
+    return Response.json({ subscribed: false });
+  } catch (error) {
+    return authErrorResponse(error) ?? Response.json({ error: "Push subscription could not be disabled." }, { status: 500 });
   }
 }

@@ -11,6 +11,7 @@ type HunterProfile = {
   name: string;
   email: string;
   avatarUrl: string | null;
+  githubUsername: string;
 };
 
 type HunterStore = {
@@ -37,6 +38,7 @@ type HunterStore = {
   rebirth: () => boolean;
   setOverlay: (overlay: HunterStore["overlay"]) => void;
   applyCompletion: (questId: string, next: HunterState) => void;
+  replaceServerState: (state: Partial<Pick<HunterStore, "hunter" | "quests" | "profile" | "skillPoints" | "unlockedSkills" | "inventory" | "activity">>) => void;
 };
 
 export const useHunterStore = create<HunterStore>()(
@@ -47,6 +49,7 @@ export const useHunterStore = create<HunterStore>()(
     name: "Hunter",
     email: "",
     avatarUrl: null,
+    githubUsername: "",
   },
   theme: "light",
   sound: true,
@@ -131,6 +134,7 @@ export const useHunterStore = create<HunterStore>()(
     return completed;
   },
   setOverlay: (overlay) => set({ overlay }),
+  replaceServerState: (serverState) => set(serverState),
   applyCompletion: (questId, hunter) =>
     set((state) => {
       const completedQuest = state.quests.find((quest) => quest.id === questId);
@@ -157,22 +161,39 @@ export const useHunterStore = create<HunterStore>()(
       inventory: state.inventory,
       activity: state.activity,
     }),
-    version: 3,
+    version: 4,
     migrate: (persistedState, version) => {
-      if (version >= 3) return persistedState;
       const persisted = persistedState as Partial<HunterStore>;
-      if (version === 2) {
-        return { ...persisted, activity: {} };
+      const profile = {
+        name: persisted.profile?.name ?? "Hunter",
+        email: persisted.profile?.email ?? "",
+        avatarUrl: persisted.profile?.avatarUrl ?? null,
+        githubUsername: persisted.profile?.githubUsername ?? "",
+      };
+      const base = {
+        hunter: persisted.hunter ?? initialHunter,
+        quests: persisted.quests ?? initialQuests,
+        profile,
+        theme: persisted.theme ?? "light",
+        sound: persisted.sound ?? true,
+        skillPoints: persisted.skillPoints ?? 0,
+        unlockedSkills: persisted.unlockedSkills ?? [],
+        inventory: persisted.inventory ?? {},
+        activity: persisted.activity ?? {},
+      };
+      if (version >= 3) {
+        return base;
       }
-      const profile =
-        persisted.profile?.email === "arin@example.com"
-          ? { name: "Hunter", email: "", avatarUrl: null }
-          : persisted.profile;
+      if (version === 2) {
+        return { ...base, activity: {} };
+      }
       return {
-        ...persisted,
+        ...base,
         hunter: initialHunter,
         quests: initialQuests,
-        profile,
+        profile: persisted.profile?.email === "arin@example.com"
+          ? { name: "Hunter", email: "", avatarUrl: null, githubUsername: "" }
+          : profile,
         skillPoints: 0,
         unlockedSkills: [],
         inventory: {},

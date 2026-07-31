@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Providers } from "./providers";
 import { Sidebar } from "./sidebar";
@@ -19,10 +19,25 @@ import { useHunterStore } from "@/store/use-hunter-store";
 function Shell() {
   const activeView = useHunterStore((state) => state.activeView);
   const theme = useHunterStore((state) => state.theme);
+  const replaceServerState = useHunterStore((state) => state.replaceServerState);
+  const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    void useHunterStore.persist.rehydrate();
-  }, []);
+    void (async () => {
+      await useHunterStore.persist.rehydrate();
+      try {
+        const response = await fetch("/api/me");
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Hunter data could not be loaded.");
+        replaceServerState(result);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : "Hunter data could not be loaded.");
+      } finally {
+        setReady(true);
+      }
+    })();
+  }, [replaceServerState]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -44,6 +59,13 @@ function Shell() {
     profile: <ProfileView />,
     settings: <SettingsView />,
   };
+
+  if (!ready) {
+    return <main className="grid min-h-screen place-items-center bg-[var(--bg)] text-sm text-[var(--muted)]">Loading your journey…</main>;
+  }
+  if (loadError) {
+    return <main className="grid min-h-screen place-items-center bg-[var(--bg)] p-6 text-center"><div><p className="text-sm font-medium">Your journey could not be loaded.</p><p className="mt-2 text-xs text-[var(--muted)]">{loadError}</p><button onClick={() => window.location.reload()} className="mt-4 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-medium text-white">Try again</button></div></main>;
+  }
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)]">

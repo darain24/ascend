@@ -2,9 +2,9 @@
 
 import { Bell, Download, LogOut, Moon, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { signOut as signOutSession } from "next-auth/react";
 import { useState } from "react";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
-import { signOutLocalAccount } from "@/lib/local-auth";
 import { useHunterStore } from "@/store/use-hunter-store";
 
 export function SettingsView() {
@@ -14,27 +14,10 @@ export function SettingsView() {
   const setTheme = useHunterStore((state) => state.setTheme);
   const [pushNotice, setPushNotice] = useState("");
 
-  function download(format: "json" | "csv") {
-    const state = useHunterStore.getState();
-    const payload = {
-      profile: state.profile,
-      hunter: state.hunter,
-      quests: state.quests,
-      activity: state.activity,
-      unlockedSkills: state.unlockedSkills,
-      inventory: state.inventory,
-    };
-    let content: string;
-    let type: string;
-    if (format === "json") {
-      content = JSON.stringify(payload, null, 2);
-      type = "application/json";
-    } else {
-      const rows = [["date", "questsCompleted", "xp"], ...Object.entries(state.activity).map(([date, value]) => [date, value.completed, value.xp])];
-      content = rows.map((row) => row.join(",")).join("\n");
-      type = "text/csv";
-    }
-    const url = URL.createObjectURL(new Blob([content], { type }));
+  async function download(format: "json" | "csv") {
+    const response = await fetch(`/api/export?format=${format}`);
+    if (!response.ok) return;
+    const url = URL.createObjectURL(await response.blob());
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = `ascend-export.${format}`;
@@ -43,17 +26,38 @@ export function SettingsView() {
   }
 
   async function enablePush() {
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!publicKey || !("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
       setPushNotice("Push notifications are not supported in this browser.");
       return;
     }
     const permission = await Notification.requestPermission();
-    setPushNotice(permission === "granted" ? "Notifications enabled on this device." : "Notification permission was not granted.");
+    if (permission !== "granted") {
+      setPushNotice("Notification permission was not granted.");
+      return;
+    }
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const padding = "=".repeat((4 - (publicKey.length % 4)) % 4);
+      const raw = atob((publicKey + padding).replace(/-/g, "+").replace(/_/g, "/"));
+      const applicationServerKey = Uint8Array.from([...raw].map((character) => character.charCodeAt(0)));
+      const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+      const response = await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(subscription),
+      });
+      if (!response.ok) throw new Error("Subscription could not be saved.");
+      setPushNotice("Notifications enabled and synced to this account.");
+    } catch (error) {
+      setPushNotice(error instanceof Error ? error.message : "Push notifications could not be enabled.");
+    }
   }
 
-  function signOut() {
-    signOutLocalAccount();
+  async function signOut() {
+    await signOutSession({ redirect: false });
     router.push("/signin");
+    router.refresh();
   }
 
   return (

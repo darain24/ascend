@@ -4,7 +4,7 @@ import { authErrorResponse, requestUserId } from "@/lib/auth/request-user";
 
 export async function GET(request: Request) {
   try {
-    const userId = requestUserId(request);
+    const userId = await requestUserId();
     const entries = await db.journalEntry.findMany({
       where: { userId },
       select: { id: true, content: true, createdAt: true },
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const userId = requestUserId(request);
+    const userId = await requestUserId();
     const { content } = (await request.json()) as { content?: string };
     const cleanContent = content?.trim();
     if (!cleanContent || cleanContent.length > 5000) {
@@ -27,11 +27,7 @@ export async function POST(request: Request) {
     }
     const entry = await db.journalEntry.create({ data: { userId, content: cleanContent } });
     const vector = `[${localEmbedding(cleanContent).join(",")}]`;
-    await db.$executeRawUnsafe(
-      `UPDATE "JournalEntry" SET "embedding" = $1::vector WHERE "id" = $2`,
-      vector,
-      entry.id,
-    );
+    await db.$executeRaw`UPDATE "JournalEntry" SET "embedding" = ${vector}::vector WHERE "id" = ${entry.id}`;
     return Response.json({ entry: { id: entry.id, content: entry.content, createdAt: entry.createdAt } }, { status: 201 });
   } catch (error) {
     return authErrorResponse(error) ?? Response.json({ error: "Journal entry could not be saved" }, { status: 500 });

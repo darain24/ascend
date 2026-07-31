@@ -15,6 +15,7 @@ import {
 import { correlationInsight, estimateDaysToTarget } from "../analytics/insights";
 import { cosineSimilarity, localEmbedding } from "../ai/embeddings";
 import { verifyGitHubSignature } from "../security/webhook";
+import { validatePassword } from "../security/password";
 import { createHmac } from "crypto";
 
 describe("game engine", () => {
@@ -132,5 +133,12 @@ describe("game engine", () => {
     const signature = `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`;
     expect(verifyGitHubSignature(body, signature, secret)).toBe(true);
     expect(verifyGitHubSignature(body, "sha256=bad", secret)).toBe(false);
+  });
+
+  it("enforces the production password policy", () => {
+    expect(validatePassword("short")).toBeTruthy();
+    expect(validatePassword("onlyletters")).toBeTruthy();
+    expect(validatePassword("12345678")).toBeTruthy();
+    expect(validatePassword("Ascend123")).toBeNull();
   });
 });

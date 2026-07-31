@@ -21,7 +21,7 @@ type UpcomingEvent = {
   description: string;
   category: "quest" | "challenge" | "milestone" | "reward";
   startsAt: string;
-  targetView: "dashboard" | "quests" | "journey" | "analytics" | "profile";
+  targetView: "dashboard" | "quests" | "journey" | "analytics" | "guild" | "profile";
 };
 
 type NotificationResponse = {

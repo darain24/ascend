@@ -4,12 +4,12 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   use: {
-    baseURL: "http://localhost:3010",
+    baseURL: "http://localhost:3000",
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npm run dev -- -p 3010",
-    url: "http://localhost:3010",
+    command: "npm run dev",
+    url: "http://localhost:3000",
     reuseExistingServer: true,
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],

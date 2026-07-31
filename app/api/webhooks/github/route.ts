@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { verifyGitHubSignature } from "@/lib/security/webhook";
+import { completeDatabaseQuest } from "@/lib/progression/complete-quest";
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -17,14 +18,26 @@ export async function POST(request: Request) {
     where: {
       active: true,
       title: { contains: "code", mode: "insensitive" },
-      user: { displayName: { equals: login, mode: "insensitive" } },
+      user: { githubUsername: { equals: login, mode: "insensitive" } },
     },
   });
   if (!quest) return Response.json({ accepted: true, matched: false });
-  return Response.json({
-    accepted: true,
-    matched: true,
-    questId: quest.id,
-    commits: payload.commits?.length ?? 0,
-  });
+  try {
+    const completion = await completeDatabaseQuest(quest.userId, quest.id);
+    return Response.json({
+      accepted: true,
+      matched: true,
+      completed: true,
+      questId: quest.id,
+      xpAwarded: completion.awardedXp,
+      commits: payload.commits?.length ?? 0,
+    });
+  } catch (error) {
+    return Response.json({
+      accepted: true,
+      matched: true,
+      completed: false,
+      reason: error instanceof Error ? error.message : "Completion failed",
+    }, { status: 409 });
+  }
 }

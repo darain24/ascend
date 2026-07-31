@@ -7,6 +7,11 @@ export function consumeRateLimit(
   options: { capacity: number; refillPerSecond: number },
 ) {
   const now = Date.now();
+  if (buckets.size > 10_000) {
+    for (const [bucketKey, value] of buckets) {
+      if (now - value.updatedAt > 60 * 60 * 1000) buckets.delete(bucketKey);
+    }
+  }
   const bucket = buckets.get(key) ?? { tokens: options.capacity, updatedAt: now };
   const elapsedSeconds = Math.max(0, now - bucket.updatedAt) / 1000;
   bucket.tokens = Math.min(

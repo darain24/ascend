@@ -64,6 +64,7 @@ model User {
   passwordHash      String?
   displayName       String?
   avatarUrl         String?
+  githubUsername    String?            @unique
   timezone          String             @default("UTC")
   title             String             @default("Novice Hunter")
   createdAt         DateTime           @default(now())
@@ -94,12 +95,12 @@ model UserStats {
   currentXp          Int          @default(0)
   xpToNextLevel      Int          @default(100)
   rank               Rank         @default(E)
-  str                Int          @default(1)
-  vit                Int          @default(1)
-  int                Int          @default(1)
-  agi                Int          @default(1)
-  per                Int          @default(1)
-  disciplineMeter    Int          @default(100)
+  str                Int          @default(0)
+  vit                Int          @default(0)
+  int                Int          @default(0)
+  agi                Int          @default(0)
+  per                Int          @default(0)
+  disciplineMeter    Int          @default(0)
   currentStreak      Int          @default(0)
   longestStreak      Int          @default(0)
   totalXpEarned      Int          @default(0)
@@ -137,14 +138,15 @@ model Quest {
 }
 
 model QuestLog {
-  id          String   @id @default(cuid())
-  questId     String
-  userId      String
-  completedAt DateTime @default(now())
-  xpAwarded   Int
-  wasOnTime   Boolean  @default(true)
-  quest       Quest    @relation(fields: [questId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String             @id @default(cuid())
+  questId           String
+  userId            String
+  completedAt       DateTime           @default(now())
+  xpAwarded         Int
+  wasOnTime         Boolean            @default(true)
+  quest             Quest              @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  raidContributions RaidContribution[]
 
   @@index([userId, completedAt])
   @@index([questId, completedAt])
@@ -210,6 +212,7 @@ model Account {
 }
 
 model Session {
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -294,14 +297,17 @@ model RaidBoss {
 }
 
 model RaidContribution {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   raidBossId  String
   userId      String
+  questLogId  String?
   damageDealt Int
-  createdAt   DateTime @default(now())
-  raidBoss    RaidBoss @relation(fields: [raidBossId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  raidBoss    RaidBoss  @relation(fields: [raidBossId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questLog    QuestLog? @relation(fields: [questLogId], references: [id], onDelete: Cascade)
 
+  @@unique([raidBossId, questLogId])
   @@index([raidBossId, createdAt])
   @@index([userId, createdAt])
 }

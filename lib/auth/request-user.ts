@@ -1,5 +1,8 @@
-export function requestUserId(request: Request) {
-  const userId = request.headers.get("x-ascend-user-id")?.trim();
+import { auth } from "@/auth";
+
+export async function requestUserId() {
+  const session = await auth();
+  const userId = session?.user?.id;
   if (!userId) {
     throw new Error("AUTH_REQUIRED");
   }

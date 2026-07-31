@@ -1,13 +1,8 @@
 "use client";
 
 import { KeyRound } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
-import {
-  changeLocalPassword,
-  createPasswordForProfile,
-  hasLocalAccount,
-  validatePassword,
-} from "@/lib/local-auth";
+import { type FormEvent, useState } from "react";
+import { validatePassword } from "@/lib/security/password";
 
 export function ChangePasswordForm({
   name,
@@ -18,19 +13,12 @@ export function ChangePasswordForm({
   email: string;
   showHeading?: boolean;
 }) {
-  const [hasAccount, setHasAccount] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    setHasAccount(hasLocalAccount(email));
-    setError("");
-    setNotice("");
-  }, [email]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,16 +36,17 @@ export function ChangePasswordForm({
 
     setSaving(true);
     try {
-      if (hasAccount) {
-        await changeLocalPassword(email, currentPassword, newPassword);
-      } else {
-        await createPasswordForProfile(name, email, newPassword);
-        setHasAccount(true);
-      }
+      const response = await fetch("/api/account/password", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "The password could not be updated.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setNotice(hasAccount ? "Password changed." : "Password created.");
+      setNotice("Password changed.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The password could not be updated.");
     } finally {
@@ -76,25 +65,22 @@ export function ChangePasswordForm({
             <KeyRound size={16} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold">{hasAccount ? "Change password" : "Create password"}</h2>
+            <h2 className="text-sm font-semibold">Change password</h2>
             <p className="mt-0.5 text-[10px] text-[var(--muted)]">For {email}</p>
           </div>
         </div>
       )}
       <form className={showHeading ? "mt-5 space-y-4" : "space-y-4"} onSubmit={submit}>
-        {hasAccount && (
-          <label className="block">
-            <span className="mb-2 block text-xs font-medium">Current password</span>
-            <input
-              className={inputClass}
-              type="password"
-              autoComplete="current-password"
-              required
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-            />
-          </label>
-        )}
+        <label className="block">
+          <span className="mb-2 block text-xs font-medium">Current password</span>
+          <input
+            className={inputClass}
+            type="password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+          />
+        </label>
         <label className="block">
           <span className="mb-2 block text-xs font-medium">New password</span>
           <input
@@ -121,11 +107,11 @@ export function ChangePasswordForm({
         {error && <p className="text-xs text-rose-600">{error}</p>}
         {notice && <p className="text-xs text-emerald-600">{notice}</p>}
         <button disabled={saving} className="w-full rounded-xl bg-slate-900 py-2.5 text-xs font-medium text-white disabled:opacity-60">
-          {saving ? "Saving…" : hasAccount ? "Change password" : "Create password"}
+          {saving ? "Saving…" : "Change password"}
         </button>
       </form>
       <p className="mt-4 text-[9px] leading-relaxed text-[var(--muted)]">
-        Passwords are hashed before being saved in this browser. Connect production authentication for secure cross-device access.
+        Passwords are hashed on the server and never stored in browser storage.
       </p>
     </>
   );

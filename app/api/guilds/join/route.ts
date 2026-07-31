@@ -4,8 +4,10 @@ import { broadcastGuild } from "@/lib/realtime";
 
 export async function POST(request: Request) {
   try {
-    const userId = requestUserId(request);
+    const userId = await requestUserId();
     const { inviteCode } = (await request.json()) as { inviteCode?: string };
+    const existing = await db.guildMember.findFirst({ where: { userId } });
+    if (existing) return Response.json({ error: "You already belong to a guild." }, { status: 409 });
     const guild = await db.guild.findUnique({ where: { inviteCode: inviteCode?.trim().toUpperCase() } });
     if (!guild) return Response.json({ error: "Invite code not found" }, { status: 404 });
     const membership = await db.guildMember.create({ data: { guildId: guild.id, userId } });

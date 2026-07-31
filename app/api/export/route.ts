@@ -3,7 +3,7 @@ import { authErrorResponse, requestUserId } from "@/lib/auth/request-user";
 
 export async function GET(request: Request) {
   try {
-    const userId = requestUserId(request);
+    const userId = await requestUserId();
     const format = new URL(request.url).searchParams.get("format") ?? "json";
     const [questLogs, statHistory, journals] = await Promise.all([
       db.questLog.findMany({ where: { userId }, include: { quest: true }, orderBy: { completedAt: "asc" } }),

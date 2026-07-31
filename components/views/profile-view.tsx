@@ -20,7 +20,6 @@ import {
 import { StatCard } from "../stat-card";
 import { ChangePasswordForm } from "../auth/change-password-form";
 import { useHunterStore } from "@/store/use-hunter-store";
-import { updateLocalAccountProfile } from "@/lib/local-auth";
 import type { StatKey } from "@/lib/game-logic/constants";
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
@@ -34,6 +33,7 @@ export function ProfileView() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
+  const [githubUsername, setGithubUsername] = useState(profile.githubUsername ?? "");
   const [profileError, setProfileError] = useState("");
   const [profileNotice, setProfileNotice] = useState("");
   const [avatarError, setAvatarError] = useState("");
@@ -47,7 +47,8 @@ export function ProfileView() {
   useEffect(() => {
     setName(profile.name);
     setEmail(profile.email);
-  }, [profile.email, profile.name]);
+    setGithubUsername(profile.githubUsername ?? "");
+  }, [profile.email, profile.githubUsername, profile.name]);
 
   const initials = profile.name
     .split(/\s+/)
@@ -56,7 +57,7 @@ export function ProfileView() {
     .slice(0, 2)
     .toUpperCase();
 
-  function saveProfile(event: FormEvent<HTMLFormElement>) {
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setProfileError("");
     setProfileNotice("");
@@ -71,8 +72,14 @@ export function ProfileView() {
       return;
     }
     try {
-      updateLocalAccountProfile(profile.email, cleanEmail, cleanName);
-      updateProfile({ name: cleanName, email: cleanEmail });
+      const response = await fetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: cleanName, email: cleanEmail, githubUsername }),
+      });
+      const result = (await response.json()) as { profile?: typeof profile; error?: string };
+      if (!response.ok || !result.profile) throw new Error(result.error || "Profile details could not be updated.");
+      updateProfile(result.profile);
       setProfileNotice("Profile details updated.");
     } catch (reason) {
       setProfileError(reason instanceof Error ? reason.message : "Profile details could not be updated.");
@@ -97,10 +104,21 @@ export function ProfileView() {
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       if (typeof reader.result === "string") {
-        updateProfile({ avatarUrl: reader.result });
-        setProfileNotice("Profile photo updated.");
+        try {
+          const response = await fetch("/api/account/profile", {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ avatarUrl: reader.result }),
+          });
+          const result = (await response.json()) as { profile?: typeof profile; error?: string };
+          if (!response.ok || !result.profile) throw new Error(result.error || "Profile photo could not be updated.");
+          updateProfile(result.profile);
+          setProfileNotice("Profile photo updated.");
+        } catch (error) {
+          setAvatarError(error instanceof Error ? error.message : "Profile photo could not be updated.");
+        }
       }
     };
     reader.onerror = () => setAvatarError("The selected image could not be read.");
@@ -186,6 +204,16 @@ export function ProfileView() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   autoComplete="email"
+                  className="h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--panel)] px-3 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-xs font-medium">GitHub username</span>
+                <input
+                  value={githubUsername}
+                  onChange={(event) => setGithubUsername(event.target.value)}
+                  autoComplete="off"
+                  placeholder="Used for code quest webhooks"
                   className="h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--panel)] px-3 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 />
               </label>

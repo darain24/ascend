@@ -4,12 +4,12 @@ import { authErrorResponse, requestUserId } from "@/lib/auth/request-user";
 
 export async function POST(request: Request) {
   try {
-    const userId = requestUserId(request);
-    const { skillId } = (await request.json()) as { skillId?: string };
-    if (!skillId) return Response.json({ error: "skillId is required" }, { status: 400 });
+    const userId = await requestUserId();
+    const { skillKey } = (await request.json()) as { skillKey?: string };
+    if (!skillKey) return Response.json({ error: "skillKey is required" }, { status: 400 });
     const result = await db.$transaction(async (tx) => {
       const [skill, stats, unlocked] = await Promise.all([
-        tx.skill.findUnique({ where: { id: skillId } }),
+        tx.skill.findUnique({ where: { key: skillKey } }),
         tx.userStats.findUnique({ where: { userId } }),
         tx.userSkill.findMany({ where: { userId }, select: { skillId: true } }),
       ]);
@@ -26,9 +26,9 @@ export async function POST(request: Request) {
         where: { userId },
         data: { skillPoints: { decrement: skill.cost } },
       });
-      const userSkill = await tx.userSkill.create({ data: { userId, skillId } });
+      const userSkill = await tx.userSkill.create({ data: { userId, skillId: skill.id } });
       await tx.auditLog.create({
-        data: { userId, action: "SKILL_UNLOCK", delta: -skill.cost, resultingState: { skillId, skillPoints: stats.skillPoints - skill.cost } },
+        data: { userId, action: "SKILL_UNLOCK", delta: -skill.cost, resultingState: { skillId: skill.id, skillPoints: stats.skillPoints - skill.cost } },
       });
       return userSkill;
     });

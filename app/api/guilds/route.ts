@@ -5,7 +5,7 @@ import { broadcastGuild } from "@/lib/realtime";
 
 export async function GET(request: Request) {
   try {
-    const userId = requestUserId(request);
+    const userId = await requestUserId();
     const membership = await db.guildMember.findFirst({
       where: { userId },
       include: {
@@ -25,10 +25,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const userId = requestUserId(request);
+    const userId = await requestUserId();
     const { name, icon = "shield" } = (await request.json()) as { name?: string; icon?: string };
     if (!name?.trim()) return Response.json({ error: "Guild name is required" }, { status: 400 });
     const guild = await db.$transaction(async (tx) => {
+      const existing = await tx.guildMember.findFirst({ where: { userId } });
+      if (existing) throw new Error("Leave your current guild before creating another.");
       const created = await tx.guild.create({
         data: { ownerId: userId, name: name.trim().slice(0, 60), icon, inviteCode: randomBytes(4).toString("hex").toUpperCase() },
       });
@@ -38,6 +40,6 @@ export async function POST(request: Request) {
     await broadcastGuild(guild.id, "member-joined", { userId, role: "OWNER" });
     return Response.json({ guild }, { status: 201 });
   } catch (error) {
-    return authErrorResponse(error) ?? Response.json({ error: "Guild creation failed" }, { status: 500 });
+    return authErrorResponse(error) ?? Response.json({ error: error instanceof Error ? error.message : "Guild creation failed" }, { status: 409 });
   }
 }

@@ -1,6 +1,8 @@
 # Ascend
 
-Ascend turns real-life self-improvement into a hunter progression system. Habits become quests; completed quests award server-verified XP, raise five independent attributes, extend streaks, and move the hunter from Rank E to Rank S.
+Ascend is a Solo Leveling-inspired self-improvement system. Signed-in hunters create real-life quests, earn server-verified XP, improve five attributes, build streaks, unlock skills and equipment, join guilds, and damage shared raid bosses.
+
+Every new account starts at Level 1 with zero XP, zero attributes, no quests, no activity history, and no unlocked rewards.
 
 ## Run locally
 
@@ -8,177 +10,190 @@ Requirements:
 
 - Node.js 20 or newer
 - npm 10 or newer
-
-Install and start the development server:
+- PostgreSQL/Neon with direct and pooled connection URLs
 
 ```bash
 cp .env.example .env
 npm install
+npm run db:generate
+npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). Stop the server with `Ctrl+C`.
 
-The development server supports hot reload. Stop it with `Ctrl+C`.
+The seed command creates only shared skill and equipment definitions. It does not create users, quests, activity, or demo progress.
 
 ## Test locally
 
-Run the game-engine unit tests:
-
-```bash
-npm run test:logic
-```
-
-Run the full verification suite, including a production build:
-
-```bash
-npm test
-```
-
-Run linting separately:
-
 ```bash
 npm run lint
+npm run test:logic
+npm run build
+
+npx playwright install chromium
+npm run test:e2e
 ```
 
-Test the production server locally:
+The fixture-free browser tests verify authentication redirects and non-enumerating password reset. Set `E2E_AUTH_EMAIL` and `E2E_AUTH_PASSWORD` to an isolated test account to activate database quest and AI persistence tests. Add `E2E_RAID_ID` and `E2E_QUEST_LOG_ID` to test raid replay protection.
+
+Test the optimized server locally with:
 
 ```bash
 npm run build
 npm start
 ```
 
-Then visit [http://localhost:3000](http://localhost:3000). To use another port:
-
-```bash
-npm start -- -p 4000
-```
-
-## Environment
-
-Every account begins at Level 1 with zero XP, no quests, no activity history, and no unlocked rewards. Copy `.env.example` to `.env` before connecting external services.
-
-- `NEXT_PUBLIC_APP_URL`: canonical application URL
-- `DATABASE_URL`: pooled Neon Postgres connection
-- `DIRECT_URL`: direct Neon connection used by Prisma migrations
-- `AUTH_SECRET`: Auth.js signing secret
-- `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`: Google OAuth credentials
-- `UPLOADTHING_TOKEN`: Uploadthing server token
-- `CRON_SECRET`: protects the daily-reset endpoint
-- `GROQ_API_KEY` and `GROQ_MODEL`: server-only AI generation
-- `PUSHER_*`: private guild realtime channels
-- `VAPID_*`: Web Push signing keys
-- `GITHUB_WEBHOOK_SECRET`: verifies GitHub webhook payloads
-- `ADMIN_EMAIL` and `ADMIN_API_SECRET`: restrict the health dashboard
-
-Never commit `.env` or `.env.local`.
-
-## Database
-
-The Neon/Postgres data model is defined in `prisma/schema.prisma`.
-
-```bash
-npm run db:generate
-npm run db:migrate
-```
-
-Use `npm run db:push` only for disposable development databases where migration history is not required.
-
-## Deploy to Vercel
-
-1. Push the repository to GitHub, GitLab, or Bitbucket.
-2. Import the repository in Vercel.
-3. Keep the detected framework preset as **Next.js**.
-4. Add the environment variables from `.env.example`.
-5. Set `NEXT_PUBLIC_APP_URL` to the final Vercel or custom-domain URL.
-6. Deploy.
-
-Vercel uses:
-
-- Build command: `npm run build`
-- Output: Next.js default
-- Install command: `npm install`
-
-## Deploy to Render
-
-Create a **Web Service** from the repository with:
-
-- Runtime: Node
-- Build command: `npm install && npm run build`
-- Start command: `npm start -- -p $PORT`
-- Health check path: `/`
-
-Add the environment variables from `.env.example`. Set `NEXT_PUBLIC_APP_URL` to the Render service URL and use Node.js 20 or newer.
-
 ## Architecture
 
 - Next.js 16 App Router, React 19, and TypeScript
-- Tailwind CSS
-- Framer Motion
-- Zustand and React Query
-- Recharts
-- Prisma schema for Neon Postgres
-- Pure, unit-tested XP and rank engine in `lib/game-logic`
-- Installable PWA shell
+- Auth.js with credentials, optional Google OAuth, encrypted JWT sessions, and Prisma adapter
+- Prisma and PostgreSQL/Neon with `pgvector`
+- React Query and Zustand; PostgreSQL is authoritative for account progression
+- Groq server routes for quest generation, narration, reports, and Ask the System
+- Pusher private channels for authenticated guild and raid updates
+- Web Push with service workers and VAPID
+- Framer Motion, Tailwind CSS, and Recharts
 
-Quest completion is calculated from the user’s current journey snapshot. The API validates the submitted quest reward and calculates XP, rank, level, discipline, and attribute changes.
+Auth.js protects the application and resolves user identity on the server. Database routes never accept a user ID from the browser. Quest rewards are loaded from the stored quest, multipliers and progression are calculated transactionally, and each XP-affecting action creates an audit record.
 
-## Ascend v2 systems
+## Implemented production integrations
 
-### AI, journal, and RAG
+### Accounts
 
-The System workspace calls Groq only through server routes. `GROQ_API_KEY` is never included in client bundles. Quest generation uses JSON mode and requires a 3–7 item structured chain; users review and edit the result before saving it.
+- Server-backed signup and credentials login
+- Optional Google OAuth
+- bcrypt password hashing with cost 12
+- Authenticated profile, email, GitHub username, and local-file avatar updates
+- Authenticated password changes
+- One-time password-reset links stored as SHA-256 hashes and expiring after 30 minutes
+- Account-isolated application hydration with no previous-user data flash
 
-Quest completion renders its normal notification immediately, then requests a short narration asynchronously. A failed or slow model call never blocks progression. The weekly cron aggregates quest/stat history and recent reflections into `WeeklyReport`.
+### Progression
 
-Journal text is converted to a deterministic local embedding and stored in Neon’s `pgvector` column. Ask-the-System ranks the user’s own reflections by cosine similarity before sending only the most relevant context to Groq. The current browser-local account mode uses the same retrieval logic locally; database-backed journal APIs activate with the Auth.js deployment session.
+- Server-created quests and server-verified completion
+- Level, rank, attribute, streak, class, skill, and rebirth persistence
+- Milestone equipment rewards and one-equipped-item-per-type enforcement
+- 84-day heatmap and analytics sourced from persisted quest logs
+- JSON and CSV exports scoped to the signed-in user
 
-### Guilds and realtime raids
+### System, guilds, and raids
 
-`Guild` and `GuildMember` support owner/member roles and private invite codes. Guild roster reads include current level, rank, and streak. Pusher uses private guild-scoped channels for join and raid events. Raid contributions are transactionally derived from an owned `QuestLog`; the client cannot submit arbitrary damage. The transaction updates HP, creates `RaidContribution`, and inserts an audit record before broadcasting.
+- PostgreSQL journal storage with vector embeddings
+- AI quest review before persistence
+- Weekly Hunter Reports
+- Guild creation, invite joining, roster display, and private Pusher channels
+- Scheduled raid creation scaled to guild size
+- Automatic raid damage from completed quests
+- Unique raid/quest-log constraint preventing repeated damage
+- GitHub push webhooks that verify HMAC signatures and complete matching code quests
+- Per-user notification-center events and Web Push subscriptions
 
-Global and guild leaderboard queries are paginated in groups of 25 and use a 60-second CDN cache with stale-while-revalidate because reads greatly outnumber writes.
+### Operations and security
 
-### Advanced progression
+- Rate limits on sensitive account, AI, and progression routes
+- Append-only progression audit records
+- Session-restricted admin dashboard with counts, level distribution, job history, and error history
+- Cron endpoints protected by `CRON_SECRET`
+- Generic password-reset responses that do not reveal account existence
 
-- Class selection unlocks at level 10. Assassin, Mage, and Tank grant 15% XP to AGI, INT, and VIT quests respectively.
-- Skills form a database self-relation. Point cost and prerequisites are validated inside one transaction.
-- Titles, avatar frames, and accent skins use `Item`/`UserItem`; equipping an item first unequips other cosmetics of that type.
-- Rebirth requires S rank and atomically resets level progression while adding a permanent 5% global XP multiplier.
-- Raid damage, multiplier math, prerequisite validation, rebirth, correlations, ETA prediction, embeddings, and webhook signatures are pure unit-tested modules.
+## Database migrations
 
-### Analytics and exports
+Migrations are stored in:
 
-The 84-day heatmap, weekly XP chart, and ETA use persisted quest completions rather than seeded values. Correlation insights use transparent day-level co-occurrence rates. Settings exports all locally available progress as JSON or CSV; the authenticated `/api/export` route exports QuestLog, StatHistory, and journals from Neon.
+- `prisma/migrations/20260729160000_ascend_v2`
+- `prisma/migrations/20260731100000_production_auth`
 
-### Security and operations
-
-Every database-backed XP-affecting mutation writes an append-only `AuditLog`. Application code exposes no update/delete operation for this table. The log captures the action, delta, and resulting state, providing a reconstruction trail for anti-cheat review.
-
-AI and quest-completion routes use token-bucket rate limits. The GitHub webhook verifies `X-Hub-Signature-256` with HMAC-SHA256 and a timing-safe comparison before matching a code quest. Push reminders use the service worker and VAPID keys.
-
-`/admin` requires both the configured admin email and a private admin token. It shows recent jobs, errors, and system counts. Never expose `ADMIN_API_SECRET` in a public environment variable.
-
-## Database migration
-
-The initial production migration is in `prisma/migrations/20260729160000_ascend_v2`. Neon must allow the `vector` extension.
+Use migrations for shared or production databases:
 
 ```bash
 npm run db:generate
-npm run db:migrate
+npm run db:deploy
+npm run db:seed
 ```
 
-## E2E tests
+Use `npm run db:push` only for disposable development databases.
 
-Install the Chromium runtime once, then run Playwright:
+## Manual setup required
 
-```bash
-npx playwright install chromium
-npm run test:e2e
-```
+Codex does not deploy this project. Complete these external steps yourself:
 
-The suite covers account creation through first level-up, AI quest review/save, and a database-backed guild raid contribution. The raid test activates when `E2E_DATABASE_USER_ID`, `E2E_RAID_ID`, and `E2E_QUEST_LOG_ID` point to isolated test records.
+1. **PostgreSQL/Neon**
+   - Create a database.
+   - Put the pooled connection in `DATABASE_URL`.
+   - Put the direct connection in `DIRECT_URL`.
+   - Run `npm run db:deploy` and `npm run db:seed`.
+   - Confirm the `vector` extension is permitted.
 
-## Deployment note
+2. **Auth.js**
+   - Generate `AUTH_SECRET` with `openssl rand -base64 32`.
+   - Credentials login works without an OAuth provider.
+   - For Google, create OAuth credentials and add `http://localhost:3000/api/auth/callback/google` plus `https://YOUR_DOMAIN/api/auth/callback/google` as authorized redirect URIs.
+   - Set `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`.
 
-The existing interface supports browser-local accounts for zero-configuration localhost testing. Multiplayer, database journal persistence, immutable audits, equipment, skills, rebirth, and server exports require the Neon/Auth.js production identity to supply `x-ascend-user-id` at the trusted server boundary. Do not accept that header directly from an untrusted public proxy; set it from the verified Auth.js session in middleware or route wrappers.
+3. **Password-reset email**
+   - Verify a sending domain in Resend.
+   - Create a Resend API key.
+   - Set `RESEND_API_KEY` and `EMAIL_FROM`.
+   - Without Resend, local development prints the reset URL only in the server terminal.
+
+4. **Groq**
+   - Create a Groq API key.
+   - Set `GROQ_API_KEY` and optionally change `GROQ_MODEL`.
+   - Never expose the key through a `NEXT_PUBLIC_` variable.
+
+5. **Pusher**
+   - Create a Channels application.
+   - Set `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, and `PUSHER_CLUSTER`.
+   - Set `NEXT_PUBLIC_PUSHER_KEY` and `NEXT_PUBLIC_PUSHER_CLUSTER` to the same public key and cluster.
+
+6. **Web Push**
+   - Run `npx web-push generate-vapid-keys`.
+   - Set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `NEXT_PUBLIC_VAPID_PUBLIC_KEY`.
+   - Set `VAPID_SUBJECT` to a monitored `mailto:` address.
+
+7. **GitHub code quests**
+   - Generate a strong `GITHUB_WEBHOOK_SECRET`.
+   - Add `https://YOUR_DOMAIN/api/webhooks/github` as a repository webhook.
+   - Select JSON and push events.
+   - Use the same secret in GitHub and Ascend.
+   - Enter the repository sender’s GitHub username in the Ascend profile.
+
+8. **Admin**
+   - Create or sign up with the intended administrator account.
+   - Set `ADMIN_EMAIL` to that exact account email.
+
+9. **Scheduled jobs**
+   - Set a strong `CRON_SECRET`.
+   - Configure authenticated GET requests with `Authorization: Bearer YOUR_CRON_SECRET`:
+     - `/api/cron/daily-reset` daily
+     - `/api/cron/push-reminders` daily
+     - `/api/cron/weekly-report` weekly
+     - `/api/cron/weekly-raid` weekly
+   - Use Vercel Cron or Render Cron Jobs.
+
+10. **Production URLs**
+    - Set `NEXT_PUBLIC_APP_URL` to the exact HTTPS origin.
+    - Update Google callbacks and GitHub webhook URLs to that same origin.
+
+## Vercel configuration
+
+- Framework preset: Next.js
+- Install command: `npm install`
+- Build command: `npm run build`
+- Add all required `.env.example` values in Project Settings.
+- Run `npm run db:deploy` and `npm run db:seed` from a trusted local terminal or CI job before serving traffic.
+
+## Render configuration
+
+Create a Node Web Service:
+
+- Build command: `npm install && npm run build`
+- Start command: `npm start -- -p $PORT`
+- Health check path: `/signin`
+- Node.js: 20 or newer
+
+Create separate Render Cron Jobs for the four cron endpoints. Add the same environment variables to the web service and cron jobs.
+
+Before a public release, use a separate staging database and run the complete verification suite. Never run E2E tests against production users or production raid fixtures.

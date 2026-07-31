@@ -12,23 +12,31 @@ export function AddQuestModal({ open, onClose }: { open: boolean; onClose: () =>
   const [detail, setDetail] = useState("");
   const [stat, setStat] = useState<StatKey>("STR");
   const [difficulty, setDifficulty] = useState<keyof typeof DIFFICULTY_XP>("NORMAL");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!title.trim()) return;
-    addQuest({
-      id: `q-${Date.now()}`,
-      title: title.trim(),
-      detail: detail.trim() || "A custom hunter objective",
-      stat,
-      difficulty,
-      xp: DIFFICULTY_XP[difficulty],
-      type: "CUSTOM",
-      completed: false,
-    });
-    setTitle("");
-    setDetail("");
-    onClose();
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/quests", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title, detail, stat, difficulty, type: "CUSTOM" }),
+      });
+      const result = (await response.json()) as { quest?: Parameters<typeof addQuest>[0]; error?: string };
+      if (!response.ok || !result.quest) throw new Error(result.error || "Quest could not be created.");
+      addQuest(result.quest);
+      setTitle("");
+      setDetail("");
+      onClose();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Quest could not be created.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -95,8 +103,9 @@ export function AddQuestModal({ open, onClose }: { open: boolean; onClose: () =>
               <span className="text-slate-500">Reward</span>
               <span className="font-semibold text-indigo-600">+{DIFFICULTY_XP[difficulty]} XP</span>
             </div>
-            <button type="submit" className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 text-sm font-medium text-white transition hover:bg-slate-800">
-              <Plus size={15} /> Add quest
+            {error && <p className="mb-3 text-xs text-rose-600">{error}</p>}
+            <button disabled={saving} type="submit" className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60">
+              <Plus size={15} /> {saving ? "Saving…" : "Add quest"}
             </button>
           </motion.form>
         </motion.div>

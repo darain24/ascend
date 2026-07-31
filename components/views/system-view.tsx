@@ -2,6 +2,7 @@
 
 import { Bot, Check, Plus, Send, Sparkles } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useHunterStore } from "@/store/use-hunter-store";
 import { cosineSimilarity, localEmbedding } from "@/lib/ai/embeddings";
 import type { GeneratedQuest } from "@/lib/ai/groq";
@@ -10,25 +11,27 @@ type JournalEntry = { id: string; content: string; createdAt: string };
 
 export function SystemView() {
   const addQuest = useHunterStore((state) => state.addQuest);
-  const profile = useHunterStore((state) => state.profile);
-  const storageKey = `ascend.journal.${profile.email || "local"}`;
   const [goal, setGoal] = useState("");
   const [quests, setQuests] = useState<GeneratedQuest[]>([]);
   const [generating, setGenerating] = useState(false);
   const [generatorError, setGeneratorError] = useState("");
   const [saved, setSaved] = useState(false);
   const [entry, setEntry] = useState("");
-  const [journal, setJournal] = useState<JournalEntry[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      return JSON.parse(localStorage.getItem(storageKey) ?? "[]") as JournalEntry[];
-    } catch {
-      return [];
-    }
-  });
+  const [journal, setJournal] = useState<JournalEntry[]>([]);
+  const [journalError, setJournalError] = useState("");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [asking, setAsking] = useState(false);
+
+  useEffect(() => {
+    void fetch("/api/journal")
+      .then(async (response) => {
+        const result = (await response.json()) as { entries?: JournalEntry[]; error?: string };
+        if (!response.ok) throw new Error(result.error || "Journal could not be loaded.");
+        setJournal(result.entries ?? []);
+      })
+      .catch((error) => setJournalError(error instanceof Error ? error.message : "Journal could not be loaded."));
+  }, []);
 
   async function generate(event: FormEvent) {
     event.preventDefault();
@@ -51,32 +54,46 @@ export function SystemView() {
     }
   }
 
-  function saveQuests() {
-    quests.forEach((quest, index) => {
-      addQuest({
-        id: `q-ai-${Date.now()}-${index}`,
-        title: quest.title.trim(),
-        detail: quest.detail.trim(),
-        stat: quest.stat,
-        difficulty: quest.difficulty,
-        xp: quest.xp,
-        type: "CUSTOM",
-        completed: false,
-      });
-    });
-    setSaved(true);
-    setQuests([]);
-    setGoal("");
+  async function saveQuests() {
+    setGeneratorError("");
+    try {
+      const created = await Promise.all(quests.map(async (quest) => {
+        const response = await fetch("/api/quests", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ...quest, type: "CUSTOM" }),
+        });
+        const result = (await response.json()) as { quest?: Parameters<typeof addQuest>[0]; error?: string };
+        if (!response.ok || !result.quest) throw new Error(result.error || "A generated quest could not be saved.");
+        return result.quest;
+      }));
+      created.forEach(addQuest);
+      setSaved(true);
+      setQuests([]);
+      setGoal("");
+    } catch (error) {
+      setGeneratorError(error instanceof Error ? error.message : "Generated quests could not be saved.");
+    }
   }
 
-  function saveJournal(event: FormEvent) {
+  async function saveJournal(event: FormEvent) {
     event.preventDefault();
     const content = entry.trim();
     if (!content) return;
-    const next = [...journal, { id: crypto.randomUUID(), content, createdAt: new Date().toISOString() }];
-    setJournal(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-    setEntry("");
+    setJournalError("");
+    try {
+      const response = await fetch("/api/journal", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      const result = (await response.json()) as { entry?: JournalEntry; error?: string };
+      if (!response.ok || !result.entry) throw new Error(result.error || "Journal entry could not be saved.");
+      setJournal((current) => [result.entry!, ...current]);
+      setEntry("");
+    } catch (error) {
+      setJournalError(error instanceof Error ? error.message : "Journal entry could not be saved.");
+    }
   }
 
   const relevantEntries = useMemo(() => {
@@ -153,6 +170,7 @@ export function SystemView() {
               <textarea value={entry} onChange={(event) => setEntry(event.target.value)} placeholder="What happened today?" className="min-h-24 w-full resize-y rounded-xl border border-[var(--line)] bg-[var(--panel)] p-3 text-sm outline-none focus:border-indigo-400" />
               <button className="mt-3 flex items-center gap-2 rounded-xl border border-[var(--line)] px-4 py-2.5 text-xs font-medium"><Check size={13} /> Save reflection</button>
             </form>
+            {journalError && <p className="mt-3 text-xs text-rose-600">{journalError}</p>}
             <p className="mt-4 text-[10px] text-[var(--muted)]">{journal.length} saved {journal.length === 1 ? "entry" : "entries"}</p>
           </section>
           <section className="system-panel p-5 sm:p-6">

@@ -9,13 +9,12 @@ import {
   Flame,
   Focus,
   Lock,
+  Medal,
   Shield,
   Sparkles,
   Swords,
-  TimerReset,
-  Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useHunterStore } from "@/store/use-hunter-store";
 
 const ranks = [
@@ -58,40 +57,21 @@ const skills = [
   },
 ];
 
-const items = [
-  {
-    id: "streak-shield",
-    title: "Streak shield",
-    detail: "Protects your current streak for one missed day.",
-    icon: Shield,
-    color: "bg-blue-50 text-blue-600",
-  },
-  {
-    id: "focus-boost",
-    title: "Focus boost",
-    detail: "Adds a bonus to your next Focus quest.",
-    icon: Zap,
-    color: "bg-amber-50 text-amber-600",
-  },
-  {
-    id: "recovery-pass",
-    title: "Recovery pass",
-    detail: "Restores 10 points to your discipline meter.",
-    icon: TimerReset,
-    color: "bg-emerald-50 text-emerald-600",
-  },
-];
+type Equipment = {
+  itemId: string;
+  equipped: boolean;
+  item: { id: string; name: string; description: string; type: "TITLE" | "AVATAR_FRAME" | "ACCENT_SKIN" };
+};
 
 export function JourneyView() {
   const hunter = useHunterStore((state) => state.hunter);
   const skillPoints = useHunterStore((state) => state.skillPoints);
   const unlockedSkills = useHunterStore((state) => state.unlockedSkills);
-  const inventory = useHunterStore((state) => state.inventory);
   const unlockSkill = useHunterStore((state) => state.unlockSkill);
-  const consumeItem = useHunterStore((state) => state.useItem);
   const chooseClass = useHunterStore((state) => state.chooseClass);
   const rebirth = useHunterStore((state) => state.rebirth);
   const [notice, setNotice] = useState<string | null>(null);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
   const currentRankIndex = ranks.findIndex((item) => item.rank === hunter.rank);
   const nextRank = ranks[currentRankIndex + 1];
 
@@ -100,12 +80,57 @@ export function JourneyView() {
     window.setTimeout(() => setNotice(null), 2400);
   }
 
-  function handleUnlock(id: string, cost: number, title: string) {
-    if (unlockSkill(id, cost)) showNotice(`${title} unlocked`);
+  async function handleUnlock(id: string, cost: number, title: string) {
+    const response = await fetch("/api/skills/unlock", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ skillKey: id }),
+    });
+    if (response.ok && unlockSkill(id, cost)) showNotice(`${title} unlocked`);
+    else if (!response.ok) {
+      const result = (await response.json()) as { error?: string };
+      showNotice(result.error || "Skill could not be unlocked");
+    }
   }
 
-  function handleUseItem(id: string, title: string) {
-    if (consumeItem(id)) showNotice(`${title} used`);
+  async function handleClass(hunterClass: "ASSASSIN" | "MAGE" | "TANK") {
+    const response = await fetch("/api/class", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ hunterClass }),
+    });
+    if (response.ok) chooseClass(hunterClass);
+    else showNotice(((await response.json()) as { error?: string }).error || "Class could not be selected");
+  }
+
+  async function handleRebirth() {
+    const response = await fetch("/api/rebirth", { method: "POST" });
+    if (response.ok) rebirth();
+    else showNotice(((await response.json()) as { error?: string }).error || "Rebirth could not begin");
+  }
+
+  useEffect(() => {
+    void fetch("/api/equipment")
+      .then((response) => response.ok ? response.json() : { items: [] })
+      .then((result: { items?: Equipment[] }) => setEquipment(result.items ?? []))
+      .catch(() => undefined);
+  }, []);
+
+  async function equip(item: Equipment) {
+    const response = await fetch("/api/equipment", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ itemId: item.itemId }),
+    });
+    if (!response.ok) {
+      showNotice(((await response.json()) as { error?: string }).error || "Item could not be equipped");
+      return;
+    }
+    setEquipment((current) => current.map((entry) => ({
+      ...entry,
+      equipped: entry.item.type === item.item.type ? entry.itemId === item.itemId : entry.equipped,
+    })));
+    showNotice(`${item.item.name} equipped`);
   }
 
   return (
@@ -173,7 +198,7 @@ export function JourneyView() {
                     <h3 className="mt-4 text-xs font-semibold">{title}</h3>
                     <p className="mt-1.5 min-h-8 text-[10px] leading-relaxed text-[var(--muted)]">{detail}</p>
                     {!unlocked && (
-                      <button disabled={!affordable} onClick={() => handleUnlock(id, cost, title)} className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--bg)] py-2 text-[10px] font-medium transition hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-45">
+                      <button disabled={!affordable} onClick={() => void handleUnlock(id, cost, title)} className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--bg)] py-2 text-[10px] font-medium transition hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-45">
                         {affordable ? "Unlock skill" : <><Lock size={11} /> Need more points</>}
                       </button>
                     )}
@@ -200,19 +225,17 @@ export function JourneyView() {
           <section className="system-panel p-5">
             <div className="mb-4 flex items-center justify-between"><h2 className="text-sm font-semibold">Rewards</h2><span className="text-[10px] text-[var(--muted)]">Inventory</span></div>
             <div className="space-y-2">
-              {items.map(({ id, title, detail, icon: Icon, color }) => {
-                const count = inventory[id] ?? 0;
-                return (
-                  <div key={id} className="rounded-2xl border border-[var(--line)] p-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`grid size-9 place-items-center rounded-xl ${color}`}><Icon size={15} /></div>
-                      <div className="min-w-0 flex-1"><p className="text-[11px] font-medium">{title}</p><p className="mt-0.5 truncate text-[9px] text-[var(--muted)]">{detail}</p></div>
-                      <span className="rounded-full bg-[var(--bg)] px-2 py-1 text-[9px]">×{count}</span>
-                    </div>
-                    <button disabled={count === 0} onClick={() => handleUseItem(id, title)} className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-[9px] font-medium text-indigo-600 hover:bg-indigo-50 disabled:text-slate-300">Use item <ChevronRight size={10} /></button>
+              {equipment.map((entry) => (
+                <div key={entry.itemId} className="rounded-2xl border border-[var(--line)] p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><Medal size={15} /></div>
+                    <div className="min-w-0 flex-1"><p className="text-[11px] font-medium">{entry.item.name}</p><p className="mt-0.5 truncate text-[9px] text-[var(--muted)]">{entry.item.description}</p></div>
+                    <span className="rounded-full bg-[var(--bg)] px-2 py-1 text-[9px]">{entry.item.type.toLowerCase().replace("_", " ")}</span>
                   </div>
-                );
-              })}
+                  <button disabled={entry.equipped} onClick={() => void equip(entry)} className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-[9px] font-medium text-indigo-600 hover:bg-indigo-50 disabled:text-emerald-600">{entry.equipped ? "Equipped" : <>Equip <ChevronRight size={10} /></>}</button>
+                </div>
+              ))}
+              {!equipment.length && <div className="rounded-2xl border border-dashed border-[var(--line)] p-5 text-center"><p className="text-xs font-medium">No equipment yet</p><p className="mt-1 text-[10px] text-[var(--muted)]">Your first reward unlocks after completing a quest.</p></div>}
             </div>
           </section>
         </aside>
@@ -232,7 +255,7 @@ export function JourneyView() {
           <p className="mt-1 text-[11px] text-[var(--muted)]">{hunter.hunterClass ? `${hunter.hunterClass.toLowerCase()} class active` : hunter.level < 10 ? `Unlocks at Level 10 · ${10 - hunter.level} levels remaining` : "Choose once. Your matching stat earns 15% bonus XP."}</p>
           <div className="mt-4 grid grid-cols-3 gap-2">
             {(["ASSASSIN", "MAGE", "TANK"] as const).map((hunterClass) => (
-              <button key={hunterClass} disabled={hunter.level < 10 || Boolean(hunter.hunterClass)} onClick={() => chooseClass(hunterClass)} className={`rounded-xl border px-2 py-3 text-[10px] font-medium disabled:cursor-not-allowed disabled:opacity-45 ${hunter.hunterClass === hunterClass ? "border-indigo-300 bg-indigo-50 text-indigo-700" : "border-[var(--line)]"}`}>{hunterClass.toLowerCase()}</button>
+              <button key={hunterClass} disabled={hunter.level < 10 || Boolean(hunter.hunterClass)} onClick={() => void handleClass(hunterClass)} className={`rounded-xl border px-2 py-3 text-[10px] font-medium disabled:cursor-not-allowed disabled:opacity-45 ${hunter.hunterClass === hunterClass ? "border-indigo-300 bg-indigo-50 text-indigo-700" : "border-[var(--line)]"}`}>{hunterClass.toLowerCase()}</button>
             ))}
           </div>
         </section>
@@ -240,7 +263,7 @@ export function JourneyView() {
           <h2 className="text-sm font-semibold">Rebirth</h2>
           <p className="mt-1 text-[11px] leading-relaxed text-[var(--muted)]">S-rank hunters can restart at Level 1 and permanently add 5% to all future XP.</p>
           <div className="mt-4 flex items-center justify-between rounded-xl bg-[var(--bg)] p-3"><span className="text-xs">Current multiplier</span><span className="text-xs font-semibold text-violet-600">×{hunter.globalXpMultiplier.toFixed(2)}</span></div>
-          <button disabled={hunter.rank !== "S"} onClick={rebirth} className="mt-3 w-full rounded-xl bg-slate-900 py-2.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">Begin rebirth</button>
+          <button disabled={hunter.rank !== "S"} onClick={() => void handleRebirth()} className="mt-3 w-full rounded-xl bg-slate-900 py-2.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">Begin rebirth</button>
         </section>
       </div>
 
