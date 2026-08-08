@@ -121,7 +121,7 @@ export function SignUpForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: cleanName, email, password }),
       });
-      const result = (await response.json()) as { error?: string };
+      const result = (await response.json().catch(() => ({ error: "The server returned an invalid response." }))) as { error?: string };
       if (!response.ok) throw new Error(result.error || "Account creation failed.");
       const authResult = await signIn("credentials", { email: email.trim().toLowerCase(), password, redirect: false });
       if (authResult?.error) throw new Error("Account created, but sign in failed.");
