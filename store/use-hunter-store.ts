@@ -12,6 +12,7 @@ type HunterProfile = {
   email: string;
   avatarUrl: string | null;
   githubUsername: string;
+  timezone: string;
 };
 
 type HunterStore = {
@@ -50,6 +51,7 @@ export const useHunterStore = create<HunterStore>()(
     email: "",
     avatarUrl: null,
     githubUsername: "",
+    timezone: "UTC",
   },
   theme: "light",
   sound: true,
@@ -169,6 +171,7 @@ export const useHunterStore = create<HunterStore>()(
         email: persisted.profile?.email ?? "",
         avatarUrl: persisted.profile?.avatarUrl ?? null,
         githubUsername: persisted.profile?.githubUsername ?? "",
+        timezone: persisted.profile?.timezone ?? "UTC",
       };
       const base = {
         hunter: persisted.hunter ?? initialHunter,
@@ -192,7 +195,7 @@ export const useHunterStore = create<HunterStore>()(
         hunter: initialHunter,
         quests: initialQuests,
         profile: persisted.profile?.email === "arin@example.com"
-          ? { name: "Hunter", email: "", avatarUrl: null, githubUsername: "" }
+          ? { name: "Hunter", email: "", avatarUrl: null, githubUsername: "", timezone: "UTC" }
           : profile,
         skillPoints: 0,
         unlockedSkills: [],

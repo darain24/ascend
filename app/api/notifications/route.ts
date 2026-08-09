@@ -1,15 +1,15 @@
 import { db } from "@/lib/db";
 import { requestUserId, authErrorResponse } from "@/lib/auth/request-user";
+import { endOfZonedDay, startOfZonedDay, zonedDateKey } from "@/lib/timezone";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const userId = await requestUserId();
-    const timezoneOffset = Number(new URL(request.url).searchParams.get("timezoneOffset")) || 0;
-    const shiftedNow = new Date(Date.now() - timezoneOffset * 60_000);
-    shiftedNow.setUTCHours(23, 59, 59, 999);
-    const localDayEnd = new Date(shiftedNow.getTime() + timezoneOffset * 60_000);
-    const dayStart = new Date();
-    dayStart.setHours(0, 0, 0, 0);
+    const user = await db.user.findUnique({ where: { id: userId }, select: { timezone: true } });
+    if (!user) return Response.json({ error: "Account not found." }, { status: 404 });
+    const now = new Date();
+    const dayStart = startOfZonedDay(now, user.timezone);
+    const localDayEnd = endOfZonedDay(now, user.timezone);
     const [quests, membership] = await Promise.all([
       db.quest.findMany({
         where: {
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       startsAt: string;
       targetView: "quests" | "guild";
     }> = quests.map((quest) => ({
-      id: `quest:${quest.id}:${dayStart.toISOString().slice(0, 10)}`,
+      id: `quest:${quest.id}:${zonedDateKey(now, user.timezone)}`,
       title: quest.title,
       description: `${quest.difficulty.toLowerCase()} ${quest.category} quest · ${quest.xpReward} base XP`,
       category: "quest" as const,

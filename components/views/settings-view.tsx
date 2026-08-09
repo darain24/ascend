@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Download, LogOut, Moon, SlidersHorizontal } from "lucide-react";
+import { Bell, Download, Globe2, LogOut, Moon, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signOut as signOutSession } from "next-auth/react";
 import { useState } from "react";
@@ -12,7 +12,9 @@ export function SettingsView() {
   const profile = useHunterStore((state) => state.profile);
   const theme = useHunterStore((state) => state.theme);
   const setTheme = useHunterStore((state) => state.setTheme);
+  const updateProfile = useHunterStore((state) => state.updateProfile);
   const [pushNotice, setPushNotice] = useState("");
+  const [timezoneNotice, setTimezoneNotice] = useState("");
 
   async function download(format: "json" | "csv") {
     const response = await fetch(`/api/export?format=${format}`);
@@ -60,6 +62,23 @@ export function SettingsView() {
     router.refresh();
   }
 
+  async function useDeviceTimezone() {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setTimezoneNotice("");
+    const response = await fetch("/api/account/profile", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ timezone }),
+    });
+    const result = (await response.json()) as { profile?: typeof profile; error?: string };
+    if (!response.ok || !result.profile) {
+      setTimezoneNotice(result.error || "Timezone could not be updated.");
+      return;
+    }
+    updateProfile(result.profile);
+    setTimezoneNotice(`Daily progress now follows ${timezone}.`);
+  }
+
   return (
     <>
       <div className="mb-7">
@@ -100,6 +119,14 @@ export function SettingsView() {
             </div>
             <button onClick={enablePush} className="rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium">Enable</button>
           </div>
+          <div className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-[var(--line)] p-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <Globe2 size={16} className="shrink-0 text-[var(--muted)]" />
+              <div className="min-w-0"><p className="text-xs font-medium">Daily timezone</p><p className="mt-0.5 truncate text-[10px] text-[var(--muted)]">{profile.timezone}</p></div>
+            </div>
+            <button onClick={useDeviceTimezone} className="shrink-0 rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium">Use device</button>
+          </div>
+          {timezoneNotice && <p className="mt-2 text-[10px] text-[var(--muted)]">{timezoneNotice}</p>}
           {pushNotice && <p className="mt-2 text-[10px] text-[var(--muted)]">{pushNotice}</p>}
           <div className="mt-3 rounded-xl border border-[var(--line)] p-4">
             <div className="flex items-center gap-3"><Download size={16} className="text-[var(--muted)]" /><div><p className="text-xs font-medium">Export your data</p><p className="mt-0.5 text-[10px] text-[var(--muted)]">Download progress without sending it elsewhere.</p></div></div>

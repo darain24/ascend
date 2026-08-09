@@ -61,15 +61,10 @@ export function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const [readIds, setReadIds] = useState<string[]>([]);
   const setView = useHunterStore((state) => state.setView);
-  const timezoneOffset =
-    typeof window === "undefined" ? 0 : new Date().getTimezoneOffset();
-
   const query = useQuery({
-    queryKey: ["upcoming-events", timezoneOffset],
+    queryKey: ["upcoming-events"],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/notifications?timezoneOffset=${timezoneOffset}`,
-      );
+      const response = await fetch("/api/notifications");
       if (!response.ok) throw new Error("Could not load upcoming events");
       return (await response.json()) as NotificationResponse;
     },

@@ -17,13 +17,14 @@ export function Topbar() {
       weekday: "long",
       month: "long",
       day: "numeric",
+      timeZone: profile.timezone,
     });
     const updateDate = () => setCurrentDate(formatter.format(new Date()));
 
     updateDate();
     const intervalId = window.setInterval(updateDate, 60_000);
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [profile.timezone]);
 
   return (
     <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-[var(--line)] bg-[var(--bg)]/90 px-4 backdrop-blur-xl sm:px-7">

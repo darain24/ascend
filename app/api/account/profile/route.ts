@@ -1,11 +1,12 @@
 import { db } from "@/lib/db";
 import { requestUserId, authErrorResponse } from "@/lib/auth/request-user";
+import { isValidTimeZone } from "@/lib/timezone";
 
 export async function PATCH(request: Request) {
   try {
     const userId = await requestUserId();
-    const body = (await request.json()) as { name?: string; email?: string; avatarUrl?: string | null; githubUsername?: string };
-    const data: { name?: string; displayName?: string; email?: string; avatarUrl?: string | null; githubUsername?: string | null } = {};
+    const body = (await request.json()) as { name?: string; email?: string; avatarUrl?: string | null; githubUsername?: string; timezone?: string };
+    const data: { name?: string; displayName?: string; email?: string; avatarUrl?: string | null; githubUsername?: string | null; timezone?: string } = {};
     if (body.name !== undefined) {
       const name = body.name.trim();
       if (name.length < 2 || name.length > 80) return Response.json({ error: "Enter a valid name." }, { status: 400 });
@@ -30,13 +31,17 @@ export async function PATCH(request: Request) {
       }
       data.githubUsername = githubUsername || null;
     }
+    if (body.timezone !== undefined) {
+      if (!isValidTimeZone(body.timezone)) return Response.json({ error: "Choose a valid timezone." }, { status: 400 });
+      data.timezone = body.timezone;
+    }
     const user = await db.user.update({
       where: { id: userId },
       data,
-      select: { name: true, displayName: true, email: true, avatarUrl: true, githubUsername: true },
+      select: { name: true, displayName: true, email: true, avatarUrl: true, githubUsername: true, timezone: true },
     });
     return Response.json({
-      profile: { name: user.displayName || user.name || "Hunter", email: user.email || "", avatarUrl: user.avatarUrl, githubUsername: user.githubUsername || "" },
+      profile: { name: user.displayName || user.name || "Hunter", email: user.email || "", avatarUrl: user.avatarUrl, githubUsername: user.githubUsername || "", timezone: user.timezone },
     });
   } catch (error) {
     if (error instanceof Error && error.message.includes("Unique constraint")) {

@@ -119,7 +119,12 @@ export function SignUpForm() {
       const response = await fetch("/api/account/signup", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: cleanName, email, password }),
+        body: JSON.stringify({
+          name: cleanName,
+          email,
+          password,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
       });
       const result = (await response.json().catch(() => ({ error: "The server returned an invalid response." }))) as { error?: string };
       if (!response.ok) throw new Error(result.error || "Account creation failed.");

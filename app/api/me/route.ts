@@ -1,11 +1,10 @@
 import { db } from "@/lib/db";
 import { requestUserId, authErrorResponse } from "@/lib/auth/request-user";
+import { startOfZonedDay, zonedDateKey } from "@/lib/timezone";
 
 export async function GET() {
   try {
     const userId = await requestUserId();
-    const dayStart = new Date();
-    dayStart.setHours(0, 0, 0, 0);
     const user = await db.user.findUnique({
       where: { id: userId },
       include: {
@@ -22,9 +21,10 @@ export async function GET() {
       },
     });
     if (!user) return Response.json({ error: "Account not found." }, { status: 404 });
+    const dayStart = startOfZonedDay(new Date(), user.timezone);
     const stats = user.stats ?? await db.userStats.create({ data: { userId } });
     const activity = user.questLogs.reduce<Record<string, { completed: number; xp: number; stats: Partial<Record<"STR" | "VIT" | "INT" | "AGI" | "PER", number>> }>>((days, log) => {
-      const date = log.completedAt.toISOString().slice(0, 10);
+      const date = zonedDateKey(log.completedAt, user.timezone);
       const current = days[date] ?? { completed: 0, xp: 0, stats: {} };
       days[date] = {
         completed: current.completed + 1,
@@ -39,6 +39,7 @@ export async function GET() {
         email: user.email || "",
         avatarUrl: user.avatarUrl || user.image,
         githubUsername: user.githubUsername || "",
+        timezone: user.timezone,
       },
       hunter: {
         level: stats.level,

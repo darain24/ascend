@@ -3,26 +3,26 @@ import type { HunterState } from "@/types/game";
 import { calculateXpAward, raidDamageFromXp } from "@/lib/game-logic/advanced";
 import { db } from "@/lib/db";
 import { broadcastGuild } from "@/lib/realtime";
+import { previousZonedDayStart, startOfZonedDay } from "@/lib/timezone";
 
 const statField = { STR: "str", VIT: "vit", INT: "int", AGI: "agi", PER: "per" } as const;
 
 export async function completeDatabaseQuest(userId: string, questId: string) {
   const result = await db.$transaction(async (tx) => {
-    const [quest, stats, userSkills] = await Promise.all([
+    const [quest, stats, userSkills, user] = await Promise.all([
       tx.quest.findFirst({ where: { id: questId, userId, active: true } }),
       tx.userStats.findUnique({ where: { userId } }),
       tx.userSkill.findMany({ where: { userId }, include: { skill: true } }),
+      tx.user.findUnique({ where: { id: userId }, select: { timezone: true } }),
     ]);
-    if (!quest || !stats) throw new Error("Quest or progression state was not found.");
-    const dayStart = new Date();
-    dayStart.setHours(0, 0, 0, 0);
+    if (!quest || !stats || !user) throw new Error("Quest or progression state was not found.");
+    const dayStart = startOfZonedDay(new Date(), user.timezone);
     const previous = await tx.questLog.findFirst({
       where: { questId, userId, ...(quest.type === "DAILY" ? { completedAt: { gte: dayStart } } : {}) },
     });
     if (previous) throw new Error("Quest has already been completed.");
     const latestCompletion = await tx.questLog.findFirst({ where: { userId }, orderBy: { completedAt: "desc" } });
-    const yesterdayStart = new Date(dayStart);
-    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    const yesterdayStart = previousZonedDayStart(new Date(), user.timezone);
     const currentStreak = latestCompletion?.completedAt && latestCompletion.completedAt >= dayStart
       ? stats.currentStreak
       : latestCompletion?.completedAt && latestCompletion.completedAt >= yesterdayStart
