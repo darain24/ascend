@@ -371,7 +371,7 @@ model AuditLog {
   delta          Int
   resultingState Json
   createdAt      DateTime @default(now())
-  user           User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([action, createdAt])

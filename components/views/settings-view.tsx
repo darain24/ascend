@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut as signOutSession } from "next-auth/react";
 import { useState } from "react";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
+import { DeleteAccountForm } from "@/components/auth/delete-account-form";
 import { useHunterStore } from "@/store/use-hunter-store";
 
 export function SettingsView() {
@@ -142,6 +143,7 @@ export function SettingsView() {
             <LogOut size={14} />
             Sign out
           </button>
+          <DeleteAccountForm />
         </section>
 
         <section className="system-panel p-5 sm:p-6">
