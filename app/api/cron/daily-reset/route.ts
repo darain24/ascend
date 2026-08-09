@@ -44,8 +44,9 @@ export async function GET(request: Request) {
       ]);
       adjusted += 1;
     }
-    await db.jobRun.update({ where: { id: run.id }, data: { status: "complete", finishedAt: new Date(), detail: { adjusted } } });
-    return Response.json({ ok: true, adjusted, processedAt: now.toISOString() });
+    const cleanup = await db.rateLimitBucket.deleteMany({ where: { expiresAt: { lt: now } } });
+    await db.jobRun.update({ where: { id: run.id }, data: { status: "complete", finishedAt: new Date(), detail: { adjusted, expiredRateLimits: cleanup.count } } });
+    return Response.json({ ok: true, adjusted, expiredRateLimits: cleanup.count, processedAt: now.toISOString() });
   } catch (error) {
     await db.jobRun.update({
       where: { id: run.id },
