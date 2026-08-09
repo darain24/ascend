@@ -1,0 +1,36 @@
+services:
+  - type: cron
+    name: ascend-daily-reset
+    runtime: node
+    schedule: "10 * * * *"
+    buildCommand: "echo 'No build required'"
+    startCommand: "node scripts/run-cron.mjs daily-reset"
+    envVars: &cron-env
+      - key: APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+
+  - type: cron
+    name: ascend-push-reminders
+    runtime: node
+    schedule: "20 * * * *"
+    buildCommand: "echo 'No build required'"
+    startCommand: "node scripts/run-cron.mjs push-reminders"
+    envVars: *cron-env
+
+  - type: cron
+    name: ascend-weekly-report
+    runtime: node
+    schedule: "0 1 * * 1"
+    buildCommand: "echo 'No build required'"
+    startCommand: "node scripts/run-cron.mjs weekly-report"
+    envVars: *cron-env
+
+  - type: cron
+    name: ascend-weekly-raid
+    runtime: node
+    schedule: "10 1 * * 1"
+    buildCommand: "echo 'No build required'"
+    startCommand: "node scripts/run-cron.mjs weekly-raid"
+    envVars: *cron-env

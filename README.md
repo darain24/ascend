@@ -36,7 +36,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The fixture-free browser tests verify authentication redirects and non-enumerating password reset. Set `E2E_AUTH_EMAIL` and `E2E_AUTH_PASSWORD` to an isolated test account to activate database quest and AI persistence tests. Add `E2E_RAID_ID` and `E2E_QUEST_LOG_ID` to test raid replay protection.
+The browser suite creates a unique temporary account, verifies a clean starting state, completes a real database-backed quest, checks AI quest persistence and raid replay protection, deletes the account, and confirms cleanup. Run it only against local or staging databases.
 
 Test the optimized server locally with:
 
@@ -136,6 +136,7 @@ Codex does not deploy this project. Complete these external steps yourself:
    - Verify a sending domain in Resend.
    - Create a Resend API key.
    - Set `RESEND_API_KEY` and `EMAIL_FROM`.
+   - Set `REQUIRE_EMAIL_VERIFICATION=true` in production after email delivery is verified.
    - Without Resend, local development prints the reset URL only in the server terminal.
 
 4. **Groq**
@@ -167,8 +168,8 @@ Codex does not deploy this project. Complete these external steps yourself:
 9. **Scheduled jobs**
    - Set a strong `CRON_SECRET`.
    - Configure authenticated GET requests with `Authorization: Bearer YOUR_CRON_SECRET`:
-     - `/api/cron/daily-reset` daily
-     - `/api/cron/push-reminders` daily
+     - `/api/cron/daily-reset` hourly so each user is processed at local midnight
+     - `/api/cron/push-reminders` hourly so reminders arrive during the user’s local evening
      - `/api/cron/weekly-report` weekly
      - `/api/cron/weekly-raid` weekly
    - Use Vercel Cron or Render Cron Jobs.
@@ -177,23 +178,25 @@ Codex does not deploy this project. Complete these external steps yourself:
     - Set `NEXT_PUBLIC_APP_URL` to the exact HTTPS origin.
     - Update Google callbacks and GitHub webhook URLs to that same origin.
 
+## Recommended production layout
+
+- Vercel: the only Ascend web deployment
+- Neon: PostgreSQL
+- Render: four Cron Jobs defined by `render.yaml`
+
+Do not deploy a second web copy to Render. See `docs/PRODUCTION.md` for release and rollback procedures.
+
 ## Vercel configuration
 
 - Framework preset: Next.js
 - Install command: `npm install`
 - Build command: `npm run build`
 - Add all required `.env.example` values in Project Settings.
+- Run `npm run check:env` with the production values before deployment.
 - Run `npm run db:deploy` and `npm run db:seed` from a trusted local terminal or CI job before serving traffic.
 
 ## Render configuration
 
-Create a Node Web Service:
-
-- Build command: `npm install && npm run build`
-- Start command: `npm start -- -p $PORT`
-- Health check path: `/signin`
-- Node.js: 20 or newer
-
-Create separate Render Cron Jobs for the four cron endpoints. Add the same environment variables to the web service and cron jobs.
+Create a Blueprint from `render.yaml` after the repository exists. Set `APP_URL` to the final Vercel HTTPS origin and set `CRON_SECRET` to exactly the same value used by Vercel. Each Render Cron Job is a separately billed service; confirm current pricing before creating the Blueprint.
 
 Before a public release, use a separate staging database and run the complete verification suite. Never run E2E tests against production users or production raid fixtures.

@@ -27,6 +27,7 @@ export default auth((request) => {
     pathname.startsWith("/api/account/signup") ||
     pathname.startsWith("/api/account/reset-password") ||
     pathname.startsWith("/api/account/verify-email") ||
+    pathname === "/api/health" ||
     pathname.startsWith("/api/webhooks/") ||
     pathname.startsWith("/api/cron/") ||
     pathname.startsWith("/_next/") ||
