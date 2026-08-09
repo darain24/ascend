@@ -421,3 +421,11 @@ model RateLimitBucket {
 
   @@index([expiresAt])
 }
+
+model WebhookDelivery {
+  id         String   @id
+  event      String
+  receivedAt DateTime @default(now())
+
+  @@index([receivedAt])
+}

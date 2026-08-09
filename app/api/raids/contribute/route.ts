@@ -2,9 +2,13 @@ import { db } from "@/lib/db";
 import { raidDamageFromXp } from "@/lib/game-logic/advanced";
 import { authErrorResponse, requestUserId } from "@/lib/auth/request-user";
 import { broadcastGuild } from "@/lib/realtime";
+import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    if (!(await consumeRateLimit(requestRateLimitKey(request, "raid-contribute"), { capacity: 30, refillPerSecond: 0.5 }))) {
+      return Response.json({ error: "Too many raid attempts. Try again later." }, { status: 429 });
+    }
     const userId = await requestUserId();
     const { raidBossId, questLogId } = (await request.json()) as { raidBossId?: string; questLogId?: string };
     if (!raidBossId || !questLogId) return Response.json({ error: "Raid and quest log are required" }, { status: 400 });

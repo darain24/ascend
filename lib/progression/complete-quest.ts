@@ -123,7 +123,7 @@ export async function completeDatabaseQuest(userId: string, questId: string) {
       globalXpMultiplier: updated.globalXpMultiplier,
     };
     return { hunter, awardedXp, progression, raid };
-  }, { isolationLevel: "Serializable" });
+  }, { isolationLevel: "Serializable", maxWait: 10_000, timeout: 20_000 });
   if (result.raid) await broadcastGuild(result.raid.guildId, "raid-damaged", result.raid);
   return result;
 }

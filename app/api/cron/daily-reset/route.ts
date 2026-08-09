@@ -45,8 +45,9 @@ export async function GET(request: Request) {
       adjusted += 1;
     }
     const cleanup = await db.rateLimitBucket.deleteMany({ where: { expiresAt: { lt: now } } });
-    await db.jobRun.update({ where: { id: run.id }, data: { status: "complete", finishedAt: new Date(), detail: { adjusted, expiredRateLimits: cleanup.count } } });
-    return Response.json({ ok: true, adjusted, expiredRateLimits: cleanup.count, processedAt: now.toISOString() });
+    const deliveries = await db.webhookDelivery.deleteMany({ where: { receivedAt: { lt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1_000) } } });
+    await db.jobRun.update({ where: { id: run.id }, data: { status: "complete", finishedAt: new Date(), detail: { adjusted, expiredRateLimits: cleanup.count, expiredWebhookDeliveries: deliveries.count } } });
+    return Response.json({ ok: true, adjusted, expiredRateLimits: cleanup.count, expiredWebhookDeliveries: deliveries.count, processedAt: now.toISOString() });
   } catch (error) {
     await db.jobRun.update({
       where: { id: run.id },

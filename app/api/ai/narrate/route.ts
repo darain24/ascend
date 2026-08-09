@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   if (!(await consumeRateLimit(requestRateLimitKey(request, "ai-narrate"), { capacity: 12, refillPerSecond: 0.2 }))) {
     return Response.json({ message: null });
   }
-  const payload = (await request.json()) as { context?: string };
-  if (!payload.context) return Response.json({ message: null });
+  const payload = (await request.json().catch(() => null)) as { context?: string } | null;
+  if (!payload?.context) return Response.json({ message: null });
   return Response.json({ message: await generateNarration(payload.context) });
 }
