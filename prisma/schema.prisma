@@ -412,3 +412,12 @@ model SystemError {
 
   @@index([source, createdAt])
 }
+
+model RateLimitBucket {
+  key         String   @id
+  count       Int      @default(1)
+  windowStart DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([expiresAt])
+}

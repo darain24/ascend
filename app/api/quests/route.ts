@@ -5,7 +5,7 @@ import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit
 
 export async function POST(request: Request) {
   try {
-    if (!consumeRateLimit(requestRateLimitKey(request, "quest-create"), { capacity: 20, refillPerSecond: 0.25 })) {
+    if (!(await consumeRateLimit(requestRateLimitKey(request, "quest-create"), { capacity: 20, refillPerSecond: 0.25 }))) {
       return Response.json({ error: "Too many quests created. Try again shortly." }, { status: 429 });
     }
     const userId = await requestUserId();

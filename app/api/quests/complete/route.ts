@@ -3,7 +3,7 @@ import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit
 import { authErrorResponse, requestUserId } from "@/lib/auth/request-user";
 
 export async function POST(request: Request) {
-  if (!consumeRateLimit(requestRateLimitKey(request, "quest-complete"), { capacity: 20, refillPerSecond: 0.5 })) {
+  if (!(await consumeRateLimit(requestRateLimitKey(request, "quest-complete"), { capacity: 20, refillPerSecond: 0.5 }))) {
     return Response.json({ error: "Too many completion attempts." }, { status: 429 });
   }
   const { questId: rawQuestId } = (await request.json()) as { questId?: string };

@@ -4,7 +4,7 @@ import { sendPasswordResetEmail } from "@/lib/email";
 import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit";
 
 export async function POST(request: Request) {
-  if (!consumeRateLimit(requestRateLimitKey(request, "reset-request"), { capacity: 4, refillPerSecond: 0.01 })) {
+  if (!(await consumeRateLimit(requestRateLimitKey(request, "reset-request"), { capacity: 4, refillPerSecond: 0.01 }))) {
     return Response.json({ error: "Too many reset requests. Try again later." }, { status: 429 });
   }
   const { email: rawEmail } = (await request.json()) as { email?: string };

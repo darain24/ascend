@@ -2,7 +2,7 @@ import { generateQuestChain } from "@/lib/ai/groq";
 import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit";
 
 export async function POST(request: Request) {
-  if (!consumeRateLimit(requestRateLimitKey(request, "ai-quests"), { capacity: 5, refillPerSecond: 1 / 30 })) {
+  if (!(await consumeRateLimit(requestRateLimitKey(request, "ai-quests"), { capacity: 5, refillPerSecond: 1 / 30 }))) {
     return Response.json({ error: "Too many AI requests. Try again shortly." }, { status: 429 });
   }
   const payload = (await request.json()) as { goal?: string };

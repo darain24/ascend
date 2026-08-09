@@ -5,7 +5,7 @@ import { validatePassword } from "@/lib/security/password";
 
 export async function POST(request: Request) {
   try {
-    if (!consumeRateLimit(requestRateLimitKey(request, "signup"), { capacity: 5, refillPerSecond: 0.02 })) {
+    if (!(await consumeRateLimit(requestRateLimitKey(request, "signup"), { capacity: 5, refillPerSecond: 0.02 }))) {
       return Response.json({ error: "Too many signup attempts. Try again later." }, { status: 429 });
     }
     const body = (await request.json()) as { name?: string; email?: string; password?: string };

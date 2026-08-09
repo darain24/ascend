@@ -5,7 +5,7 @@ import { validatePassword } from "@/lib/security/password";
 import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit";
 
 export async function POST(request: Request) {
-  if (!consumeRateLimit(requestRateLimitKey(request, "reset-confirm"), { capacity: 6, refillPerSecond: 0.02 })) {
+  if (!(await consumeRateLimit(requestRateLimitKey(request, "reset-confirm"), { capacity: 6, refillPerSecond: 0.02 }))) {
     return Response.json({ error: "Too many attempts. Try again later." }, { status: 429 });
   }
   const { email: rawEmail, token = "", password = "" } = (await request.json()) as {

@@ -2,7 +2,7 @@ import { answerSystemQuestion } from "@/lib/ai/groq";
 import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit";
 
 export async function POST(request: Request) {
-  if (!consumeRateLimit(requestRateLimitKey(request, "ai-ask"), { capacity: 8, refillPerSecond: 1 / 20 })) {
+  if (!(await consumeRateLimit(requestRateLimitKey(request, "ai-ask"), { capacity: 8, refillPerSecond: 1 / 20 }))) {
     return Response.json({ error: "Too many questions. Try again shortly." }, { status: 429 });
   }
   const payload = (await request.json()) as {

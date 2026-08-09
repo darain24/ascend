@@ -14,7 +14,7 @@ const providers: Provider[] = [
       password: { type: "password" },
     },
     async authorize(credentials, request) {
-      if (!consumeRateLimit(requestRateLimitKey(request, "credentials-login"), { capacity: 8, refillPerSecond: 0.05 })) {
+      if (!(await consumeRateLimit(requestRateLimitKey(request, "credentials-login"), { capacity: 8, refillPerSecond: 0.05 }))) {
         return null;
       }
       const email = String(credentials.email ?? "").trim().toLowerCase();

@@ -6,7 +6,7 @@ import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit
 
 export async function POST(request: Request) {
   try {
-    if (!consumeRateLimit(requestRateLimitKey(request, "change-password"), { capacity: 5, refillPerSecond: 0.02 })) {
+    if (!(await consumeRateLimit(requestRateLimitKey(request, "change-password"), { capacity: 5, refillPerSecond: 0.02 }))) {
       return Response.json({ error: "Too many attempts. Try again later." }, { status: 429 });
     }
     const userId = await requestUserId();
