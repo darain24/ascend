@@ -126,8 +126,12 @@ export function SignUpForm() {
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
-      const result = (await response.json().catch(() => ({ error: "The server returned an invalid response." }))) as { error?: string };
+      const result = (await response.json().catch(() => ({ error: "The server returned an invalid response." }))) as { error?: string; verificationRequired?: boolean };
       if (!response.ok) throw new Error(result.error || "Account creation failed.");
+      if (result.verificationRequired) {
+        router.push(`/verify-email?sent=1&email=${encodeURIComponent(email.trim().toLowerCase())}`);
+        return;
+      }
       const authResult = await signIn("credentials", { email: email.trim().toLowerCase(), password, redirect: false });
       if (authResult?.error) throw new Error("Account created, but sign in failed.");
       resetJourney();

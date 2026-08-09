@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "crypto";
 import { db } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit";
+import { applicationOrigin } from "@/lib/app-url";
 
 export async function POST(request: Request) {
   if (!(await consumeRateLimit(requestRateLimitKey(request, "reset-request"), { capacity: 4, refillPerSecond: 0.01 }))) {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
       expires: new Date(Date.now() + 30 * 60 * 1000),
     },
   });
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
+  const baseUrl = applicationOrigin(request);
   const url = `${baseUrl}/reset-password?email=${encodeURIComponent(email)}&token=${token}`;
   try {
     await sendPasswordResetEmail(email, url);

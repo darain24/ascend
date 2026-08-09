@@ -6,6 +6,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { compare } from "bcryptjs";
 import { db } from "@/lib/db";
 import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit";
+import { emailVerificationRequired } from "@/lib/auth/email-verification";
 
 const providers: Provider[] = [
   Credentials({
@@ -21,6 +22,7 @@ const providers: Provider[] = [
       const password = String(credentials.password ?? "");
       if (!email || !password) return null;
       const user = await db.user.findUnique({ where: { email } });
+      if (emailVerificationRequired() && !user?.emailVerified) return null;
       if (!user?.passwordHash || !(await compare(password, user.passwordHash))) return null;
       return { id: user.id, name: user.displayName || user.name, email: user.email, image: user.avatarUrl || user.image };
     },

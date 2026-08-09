@@ -77,10 +77,10 @@ export function ProfileView() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: cleanName, email: cleanEmail, githubUsername }),
       });
-      const result = (await response.json()) as { profile?: typeof profile; error?: string };
+      const result = (await response.json()) as { profile?: typeof profile; error?: string; notice?: string };
       if (!response.ok || !result.profile) throw new Error(result.error || "Profile details could not be updated.");
       updateProfile(result.profile);
-      setProfileNotice("Profile details updated.");
+      setProfileNotice(result.notice || "Profile details updated.");
     } catch (reason) {
       setProfileError(reason instanceof Error ? reason.message : "Profile details could not be updated.");
     }

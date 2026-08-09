@@ -1,12 +1,15 @@
 import { db } from "@/lib/db";
 import { requestUserId, authErrorResponse } from "@/lib/auth/request-user";
 import { isValidTimeZone } from "@/lib/timezone";
+import { applicationOrigin } from "@/lib/app-url";
+import { emailVerificationRequired, issueEmailVerification } from "@/lib/auth/email-verification";
 
 export async function PATCH(request: Request) {
   try {
     const userId = await requestUserId();
     const body = (await request.json()) as { name?: string; email?: string; avatarUrl?: string | null; githubUsername?: string; timezone?: string };
     const data: { name?: string; displayName?: string; email?: string; avatarUrl?: string | null; githubUsername?: string | null; timezone?: string } = {};
+    let pendingEmail: string | null = null;
     if (body.name !== undefined) {
       const name = body.name.trim();
       if (name.length < 2 || name.length > 80) return Response.json({ error: "Enter a valid name." }, { status: 400 });
@@ -16,7 +19,15 @@ export async function PATCH(request: Request) {
     if (body.email !== undefined) {
       const email = body.email.trim().toLowerCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.json({ error: "Enter a valid email." }, { status: 400 });
-      data.email = email;
+      const current = await db.user.findUnique({ where: { id: userId }, select: { email: true } });
+      if (current?.email !== email && emailVerificationRequired()) {
+        const existing = await db.user.findUnique({ where: { email }, select: { id: true } });
+        if (existing) return Response.json({ error: "That email address is already in use." }, { status: 409 });
+        await issueEmailVerification({ userId, email, origin: applicationOrigin(request), purpose: "change" });
+        pendingEmail = email;
+      } else {
+        data.email = email;
+      }
     }
     if (body.avatarUrl !== undefined) {
       if (body.avatarUrl && (!body.avatarUrl.startsWith("data:image/") || body.avatarUrl.length > 2_800_000)) {
@@ -42,6 +53,7 @@ export async function PATCH(request: Request) {
     });
     return Response.json({
       profile: { name: user.displayName || user.name || "Hunter", email: user.email || "", avatarUrl: user.avatarUrl, githubUsername: user.githubUsername || "", timezone: user.timezone },
+      ...(pendingEmail ? { notice: `Check ${pendingEmail} to confirm the email change.` } : {}),
     });
   } catch (error) {
     if (error instanceof Error && error.message.includes("Unique constraint")) {

@@ -28,6 +28,7 @@ export function AuthShell({
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{description}</p>
           {children}
         </section>
+        <p className="mt-5 text-center text-[10px] text-[var(--muted)]"><Link href="/privacy" className="hover:text-[var(--text)]">Privacy</Link><span className="mx-2">·</span><Link href="/terms" className="hover:text-[var(--text)]">Terms</Link></p>
       </div>
     </main>
   );

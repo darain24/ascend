@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
-const publicPaths = ["/signin", "/signup", "/reset-password", "/privacy", "/terms"];
+const publicPaths = ["/signin", "/signup", "/reset-password", "/verify-email", "/privacy", "/terms"];
 
 export default auth((request) => {
   const { pathname, search } = request.nextUrl;
@@ -26,6 +26,7 @@ export default auth((request) => {
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/account/signup") ||
     pathname.startsWith("/api/account/reset-password") ||
+    pathname.startsWith("/api/account/verify-email") ||
     pathname.startsWith("/api/webhooks/") ||
     pathname.startsWith("/api/cron/") ||
     pathname.startsWith("/_next/") ||

@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit";
 import { validatePassword } from "@/lib/security/password";
 import { normalizeTimeZone } from "@/lib/timezone";
+import { applicationOrigin } from "@/lib/app-url";
+import { emailVerificationRequired, issueEmailVerification } from "@/lib/auth/email-verification";
 
 export async function POST(request: Request) {
   try {
@@ -27,11 +29,19 @@ export async function POST(request: Request) {
         email,
         passwordHash: await hash(password, 12),
         timezone: normalizeTimeZone(body.timezone),
+        emailVerified: emailVerificationRequired() ? null : new Date(),
         stats: { create: {} },
       },
       select: { id: true, name: true, email: true },
     });
-    return Response.json({ user }, { status: 201 });
+    if (emailVerificationRequired()) {
+      try {
+        await issueEmailVerification({ userId: user.id, email: user.email!, origin: applicationOrigin(request) });
+      } catch (error) {
+        await db.systemError.create({ data: { source: "signup-verification", message: error instanceof Error ? error.message : "Verification email failure" } }).catch(() => undefined);
+      }
+    }
+    return Response.json({ user, verificationRequired: emailVerificationRequired() }, { status: 201 });
   } catch (error) {
     console.error("Account signup failed", error);
     return Response.json(
