@@ -13,7 +13,14 @@ export async function POST(request: Request) {
         tx.raidBoss.findUnique({ where: { id: raidBossId } }),
         tx.questLog.findFirst({ where: { id: questLogId, userId } }),
       ]);
-      if (!raid || !log || raid.defeated || raid.endsAt <= new Date()) throw new Error("Raid contribution is not valid.");
+      if (!raid || !log || raid.defeated || raid.startsAt > new Date() || raid.endsAt <= new Date()) {
+        throw new Error("Raid contribution is not valid.");
+      }
+      const membership = await tx.guildMember.findUnique({
+        where: { guildId_userId: { guildId: raid.guildId, userId } },
+        select: { userId: true },
+      });
+      if (!membership) throw new Error("Join this raid's guild before contributing.");
       const duplicate = await tx.raidContribution.findUnique({
         where: { raidBossId_questLogId: { raidBossId: raid.id, questLogId: log.id } },
       });
