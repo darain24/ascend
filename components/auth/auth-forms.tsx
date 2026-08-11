@@ -14,6 +14,44 @@ function ErrorMessage({ message }: { message: string }) {
   return message ? <p className="text-xs text-rose-600">{message}</p> : null;
 }
 
+function GoogleAuthButton({ mode }: { mode: "signin" | "signup" }) {
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    void fetch("/api/auth/providers")
+      .then((response) => response.json())
+      .then((providers: Record<string, unknown>) => setEnabled(Boolean(providers.google)))
+      .catch(() => undefined);
+  }, []);
+
+  if (!enabled) return null;
+
+  function continueWithGoogle() {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    document.cookie = `ascend-oauth-timezone=${encodeURIComponent(timezone)}; Path=/; Max-Age=600; SameSite=Lax`;
+    void signIn("google", { callbackUrl: "/" });
+  }
+
+  return (
+    <>
+      <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
+        <span className="h-px flex-1 bg-[var(--line)]" />
+        <span>or</span>
+        <span className="h-px flex-1 bg-[var(--line)]" />
+      </div>
+      <button type="button" onClick={continueWithGoogle} className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--line)] bg-[var(--panel)] text-sm font-medium transition hover:bg-[var(--bg)]">
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4">
+          <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.55h3.24c1.9-1.75 2.98-4.33 2.98-7.42Z" />
+          <path fill="#34A853" d="M12 22c2.7 0 4.98-.9 6.63-2.35l-3.24-2.55c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.63A10 10 0 0 0 12 22Z" />
+          <path fill="#FBBC05" d="M6.39 13.93A6 6 0 0 1 6.08 12c0-.67.11-1.32.31-1.93V7.44H3.04A10 10 0 0 0 2 12c0 1.61.38 3.14 1.04 4.56l3.35-2.63Z" />
+          <path fill="#EA4335" d="M12 5.94c1.47 0 2.79.5 3.83 1.5l2.87-2.88A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.44l3.35 2.63C7.18 7.7 9.39 5.94 12 5.94Z" />
+        </svg>
+        {mode === "signup" ? "Sign up with Google" : "Continue with Google"}
+      </button>
+    </>
+  );
+}
+
 export function SignInForm() {
   const router = useRouter();
   const updateProfile = useHunterStore((state) => state.updateProfile);
@@ -21,14 +59,6 @@ export function SignInForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [googleEnabled, setGoogleEnabled] = useState(false);
-
-  useEffect(() => {
-    void fetch("/api/auth/providers")
-      .then((response) => response.json())
-      .then((providers: Record<string, unknown>) => setGoogleEnabled(Boolean(providers.google)))
-      .catch(() => undefined);
-  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -70,11 +100,7 @@ export function SignInForm() {
           {submitting ? "Signing in…" : "Sign in"}
         </button>
       </form>
-      {googleEnabled && (
-        <button onClick={() => void signIn("google", { callbackUrl: "/" })} className="mt-3 h-11 w-full rounded-xl border border-[var(--line)] text-sm font-medium">
-          Continue with Google
-        </button>
-      )}
+      <GoogleAuthButton mode="signin" />
       <p className="mt-6 text-center text-xs text-[var(--muted)]">
         New to Ascend? <Link href="/signup" className="font-medium text-indigo-600">Create an account</Link>
       </p>
@@ -170,6 +196,7 @@ export function SignUpForm() {
           {submitting ? "Creating account…" : "Create account"}
         </button>
       </form>
+      <GoogleAuthButton mode="signup" />
       <p className="mt-6 text-center text-xs text-[var(--muted)]">
         Already have an account? <Link href="/signin" className="font-medium text-indigo-600">Sign in</Link>
       </p>

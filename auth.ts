@@ -4,9 +4,11 @@ import Google from "next-auth/providers/google";
 import type { Provider } from "next-auth/providers";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { compare } from "bcryptjs";
+import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { consumeRateLimit, requestRateLimitKey } from "@/lib/security/rate-limit";
 import { emailVerificationRequired } from "@/lib/auth/email-verification";
+import { isValidTimeZone } from "@/lib/timezone";
 
 const providers: Provider[] = [
   Credentials({
@@ -34,6 +36,18 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      allowDangerousEmailAccountLinking: true,
+      profile(profile) {
+        if (!profile.email || !profile.email_verified) {
+          throw new Error("Google did not provide a verified email address.");
+        }
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        };
+      },
     }),
   );
 }
@@ -57,11 +71,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   events: {
     async createUser({ user }) {
       if (!user.id) return;
-      await db.userStats.upsert({
-        where: { userId: user.id },
-        update: {},
-        create: { user: { connect: { id: user.id } } },
-      });
+      const requestedTimezone = (await cookies()).get("ascend-oauth-timezone")?.value;
+      await db.$transaction([
+        ...(requestedTimezone && isValidTimeZone(requestedTimezone)
+          ? [db.user.update({ where: { id: user.id }, data: { timezone: requestedTimezone } })]
+          : []),
+        db.userStats.upsert({
+          where: { userId: user.id },
+          update: {},
+          create: { user: { connect: { id: user.id } } },
+        }),
+      ]);
     },
   },
 });
