@@ -200,3 +200,4 @@ Do not deploy a second web copy to Render. See `docs/PRODUCTION.md` for release 
 Create a Blueprint from `render.yaml` after the repository exists. Set `APP_URL` to the final Vercel HTTPS origin and set `CRON_SECRET` to exactly the same value used by Vercel. Each Render Cron Job is a separately billed service; confirm current pricing before creating the Blueprint.
 
 Before a public release, use a separate staging database and run the complete verification suite. Never run E2E tests against production users or production raid fixtures.
+# ascend
