@@ -69,6 +69,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
+    async signIn({ user, account, profile }) {
+      const googlePicture = profile && typeof profile.picture === "string" ? profile.picture : null;
+      if (account?.provider === "google" && user.id && googlePicture) {
+        await db.user.update({
+          where: { id: user.id },
+          data: { image: googlePicture },
+        });
+      }
+    },
     async createUser({ user }) {
       if (!user.id) return;
       const requestedTimezone = (await cookies()).get("ascend-oauth-timezone")?.value;

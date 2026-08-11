@@ -49,10 +49,10 @@ export async function PATCH(request: Request) {
     const user = await db.user.update({
       where: { id: userId },
       data,
-      select: { name: true, displayName: true, email: true, avatarUrl: true, githubUsername: true, timezone: true },
+      select: { name: true, displayName: true, email: true, image: true, avatarUrl: true, githubUsername: true, timezone: true },
     });
     return Response.json({
-      profile: { name: user.displayName || user.name || "Hunter", email: user.email || "", avatarUrl: user.avatarUrl, githubUsername: user.githubUsername || "", timezone: user.timezone },
+      profile: { name: user.displayName || user.name || "Hunter", email: user.email || "", avatarUrl: user.avatarUrl || user.image, githubUsername: user.githubUsername || "", timezone: user.timezone },
       ...(pendingEmail ? { notice: `Check ${pendingEmail} to confirm the email change.` } : {}),
     });
   } catch (error) {
