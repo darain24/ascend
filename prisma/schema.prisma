@@ -56,36 +56,37 @@ enum ItemType {
 }
 
 model User {
-  id                String             @id @default(cuid())
-  name              String?
-  email             String?            @unique
-  emailVerified     DateTime?
-  image             String?
-  passwordHash      String?
-  displayName       String?
-  avatarUrl         String?
-  githubUsername    String?            @unique
-  timezone          String             @default("UTC")
-  title             String             @default("Novice Hunter")
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  accounts          Account[]
-  sessions          Session[]
-  stats             UserStats?
-  quests            Quest[]
-  questLogs         QuestLog[]
-  statHistory       StatHistory[]
-  achievements      UserAchievement[]
-  penalties         PenaltyLog[]
-  weeklyReports     WeeklyReport[]
-  journalEntries    JournalEntry[]
-  guildMemberships  GuildMember[]
-  createdGuilds     Guild[]            @relation("GuildOwner")
-  raidContributions RaidContribution[]
-  skills            UserSkill[]
-  items             UserItem[]
-  auditLogs         AuditLog[]
-  pushSubscriptions PushSubscription[]
+  id                    String             @id @default(cuid())
+  name                  String?
+  email                 String?            @unique
+  emailVerified         DateTime?
+  image                 String?
+  passwordHash          String?
+  displayName           String?
+  avatarUrl             String?
+  githubUsername        String?            @unique
+  timezone              String             @default("UTC")
+  title                 String             @default("Novice Hunter")
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  accounts              Account[]
+  sessions              Session[]
+  stats                 UserStats?
+  quests                Quest[]
+  questLogs             QuestLog[]
+  statHistory           StatHistory[]
+  achievements          UserAchievement[]
+  penalties             PenaltyLog[]
+  weeklyReports         WeeklyReport[]
+  journalEntries        JournalEntry[]
+  guildMemberships      GuildMember[]
+  createdGuilds         Guild[]            @relation("GuildOwner")
+  raidContributions     RaidContribution[]
+  skills                UserSkill[]
+  items                 UserItem[]
+  auditLogs             AuditLog[]
+  pushSubscriptions     PushSubscription[]
 }
 
 model UserStats {

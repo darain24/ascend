@@ -50,9 +50,20 @@ test("a new hunter completes the production account, quest, AI, guild, and raid 
     const session = await (await page.request.get("/api/auth/session")).json() as { user?: { id?: string } };
     userId = session.user?.id ?? "";
     expect(userId).not.toBe("");
-    const initial = await (await page.request.get("/api/me")).json() as { hunter: { totalCompleted: number }; quests: unknown[] };
+    const initial = await (await page.request.get("/api/me")).json() as { hunter: { totalCompleted: number }; quests: unknown[]; onboarding: { completed: boolean } };
     expect(initial.hunter.totalCompleted).toBe(0);
     expect(initial.quests).toHaveLength(0);
+    expect(initial.onboarding.completed).toBe(false);
+
+    await expect(page.getByRole("dialog", { name: "Build progress one quest at a time" })).toBeVisible();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+    const onboardingSaved = page.waitForResponse((response) => response.url().endsWith("/api/account/onboarding") && response.request().method() === "PATCH");
+    await page.getByRole("button", { name: "View overview" }).click();
+    expect((await onboardingSaved).ok()).toBe(true);
+    await expect(page.getByRole("dialog", { name: "Choose your first step" })).toHaveCount(0);
+    const afterOnboarding = await (await page.request.get("/api/me")).json() as { onboarding: { completed: boolean } };
+    expect(afterOnboarding.onboarding.completed).toBe(true);
 
     await page.setViewportSize({ width: 375, height: 812 });
     const mobileNav = page.getByRole("navigation", { name: "Primary navigation" });
@@ -65,7 +76,7 @@ test("a new hunter completes the production account, quest, AI, guild, and raid 
       { label: "Profile", heading: "Profile" },
     ];
     for (const destination of mobileDestinations) {
-      await mobileNav.getByRole("button", { name: destination.label, exact: true }).click();
+      await mobileNav.getByRole("button", { name: destination.label, exact: true }).click({ force: true });
       await expect(page.getByRole("heading", { name: destination.heading }).first()).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
     }

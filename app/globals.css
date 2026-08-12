@@ -108,6 +108,11 @@ button {
     100% { transform: scale(1); opacity: 1; }
   }
 
+  @keyframes loading-breathe {
+    0%, 100% { opacity: 0.55; transform: scale(0.98); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+
   body {
     animation: page-fade-in 320ms ease-out both;
   }
@@ -155,6 +160,19 @@ button {
 
   button:not(:disabled):hover svg {
     transform: scale(1.08);
+  }
+
+  a {
+    transition:
+      color 160ms ease,
+      background-color 160ms ease,
+      border-color 160ms ease,
+      opacity 160ms ease,
+      transform 160ms ease;
+  }
+
+  .loading-breathe {
+    animation: loading-breathe 1.4s ease-in-out infinite;
   }
 
   input,

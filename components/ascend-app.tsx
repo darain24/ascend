@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Providers } from "./providers";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
@@ -14,6 +14,7 @@ import { SettingsView } from "./views/settings-view";
 import { SystemView } from "./views/system-view";
 import { GuildView } from "./views/guild-view";
 import { SystemNotification } from "./system-notification";
+import { Onboarding } from "./onboarding";
 import { useHunterStore } from "@/store/use-hunter-store";
 
 function Shell() {
@@ -22,6 +23,8 @@ function Shell() {
   const replaceServerState = useHunterStore((state) => state.replaceServerState);
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     void (async () => {
@@ -31,6 +34,7 @@ function Shell() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Hunter data could not be loaded.");
         replaceServerState(result);
+        setShowOnboarding(result.onboarding?.completed === false);
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : "Hunter data could not be loaded.");
       } finally {
@@ -61,7 +65,7 @@ function Shell() {
   };
 
   if (!ready) {
-    return <main className="grid min-h-screen place-items-center bg-[var(--bg)] text-sm text-[var(--muted)]">Loading your journey…</main>;
+    return <main className="grid min-h-screen place-items-center bg-[var(--bg)] text-sm text-[var(--muted)]"><span className="loading-breathe">Loading your journey…</span></main>;
   }
   if (loadError) {
     return <main className="grid min-h-screen place-items-center bg-[var(--bg)] p-6 text-center"><div><p className="text-sm font-medium">Your journey could not be loaded.</p><p className="mt-2 text-xs text-[var(--muted)]">{loadError}</p><button onClick={() => window.location.reload()} className="mt-4 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-medium text-white">Try again</button></div></main>;
@@ -72,17 +76,21 @@ function Shell() {
       <Sidebar />
       <div className="relative min-h-screen pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:ml-[88px] md:pb-0 xl:ml-[232px]">
         <Topbar />
-        <motion.div
-          key={activeView}
-          initial={{ opacity: 0, y: 12, scale: 0.995 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="view-enter mx-auto max-w-[1540px] px-3.5 pb-8 pt-5 min-[380px]:px-4 sm:px-6 sm:pb-10 lg:px-8"
-        >
-          {views[activeView]}
-        </motion.div>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeView}
+            initial={reduceMotion ? false : { opacity: 0, y: 12, scale: 0.995 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="view-enter mx-auto max-w-[1540px] px-3.5 pb-8 pt-5 min-[380px]:px-4 sm:px-6 sm:pb-10 lg:px-8"
+          >
+            {views[activeView]}
+          </motion.div>
+        </AnimatePresence>
       </div>
       <SystemNotification />
+      <Onboarding open={showOnboarding} onComplete={() => setShowOnboarding(false)} />
     </main>
   );
 }

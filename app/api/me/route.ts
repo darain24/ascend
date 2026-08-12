@@ -41,6 +41,9 @@ export async function GET() {
         githubUsername: user.githubUsername || "",
         timezone: user.timezone,
       },
+      onboarding: {
+        completed: Boolean(user.onboardingCompletedAt),
+      },
       hunter: {
         level: stats.level,
         xp: stats.currentXp,
