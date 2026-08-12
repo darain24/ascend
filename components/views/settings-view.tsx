@@ -98,7 +98,7 @@ export function SettingsView() {
               <p className="mt-0.5 text-[10px] text-[var(--muted)]">Choose how Ascend looks on this device.</p>
             </div>
           </div>
-          <div className="flex items-center justify-between rounded-xl border border-[var(--line)] p-4">
+          <div className="flex flex-col items-stretch gap-3 rounded-xl border border-[var(--line)] p-4 min-[380px]:flex-row min-[380px]:items-center min-[380px]:justify-between">
             <div className="flex items-center gap-3">
               <Moon size={16} className="text-[var(--muted)]" />
               <div>
@@ -108,24 +108,24 @@ export function SettingsView() {
             </div>
             <button
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-              className="rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium"
+              className="w-full rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium min-[380px]:w-auto"
             >
               {theme === "light" ? "Use dark" : "Use light"}
             </button>
           </div>
-          <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--line)] p-4">
+          <div className="mt-3 flex flex-col items-stretch gap-3 rounded-xl border border-[var(--line)] p-4 min-[380px]:flex-row min-[380px]:items-center min-[380px]:justify-between">
             <div className="flex items-center gap-3">
               <Bell size={16} className="text-[var(--muted)]" />
               <div><p className="text-xs font-medium">Push reminders</p><p className="mt-0.5 text-[10px] text-[var(--muted)]">Daily quests and penalty warnings.</p></div>
             </div>
-            <button onClick={enablePush} className="rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium">Enable</button>
+            <button onClick={enablePush} className="w-full rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium min-[380px]:w-auto">Enable</button>
           </div>
-          <div className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-[var(--line)] p-4">
+          <div className="mt-3 flex flex-col items-stretch gap-3 rounded-xl border border-[var(--line)] p-4 min-[380px]:flex-row min-[380px]:items-center min-[380px]:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <Globe2 size={16} className="shrink-0 text-[var(--muted)]" />
               <div className="min-w-0"><p className="text-xs font-medium">Daily timezone</p><p className="mt-0.5 truncate text-[10px] text-[var(--muted)]">{profile.timezone}</p></div>
             </div>
-            <button onClick={useDeviceTimezone} className="shrink-0 rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium">Use device</button>
+            <button onClick={useDeviceTimezone} className="w-full shrink-0 rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium min-[380px]:w-auto">Use device</button>
           </div>
           {timezoneNotice && <p className="mt-2 text-[10px] text-[var(--muted)]">{timezoneNotice}</p>}
           {pushNotice && <p className="mt-2 text-[10px] text-[var(--muted)]">{pushNotice}</p>}

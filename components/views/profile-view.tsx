@@ -169,7 +169,7 @@ export function ProfileView() {
           </div>
           <div className="flex-1">
             <h2 className="text-2xl font-semibold tracking-tight">{profile.name}</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">{profile.email || "Add your email"}</p>
+            <p className="mt-1 break-all text-sm text-[var(--muted)]">{profile.email || "Add your email"}</p>
             <p className="mt-1 text-xs text-[var(--muted)]">Novice Hunter · Level {hunter.level}</p>
             <span className="mt-3 inline-flex rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-medium text-indigo-700">Rank {hunter.rank}</span>
             {hunter.rebirthCount > 0 && <span className="ml-2 mt-3 inline-flex rounded-full bg-violet-50 px-3 py-1 text-[11px] font-medium text-violet-700">Rebirth {hunter.rebirthCount}</span>}
@@ -219,7 +219,7 @@ export function ProfileView() {
               </label>
               {profileError && <p className="text-xs text-rose-600">{profileError}</p>}
               {profileNotice && <p className="text-xs text-emerald-600">{profileNotice}</p>}
-              <button className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-medium text-white">Save changes</button>
+              <button className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-medium text-white min-[380px]:w-auto">Save changes</button>
             </form>
           </section>
 

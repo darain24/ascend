@@ -28,8 +28,8 @@ export function ActivityHeatmap({
   );
 
   return (
-    <div>
-      <div className={`grid grid-flow-col grid-rows-7 ${compact ? "gap-1" : "gap-1.5"}`}>
+    <div className="max-w-full overflow-x-auto pb-1 scrollbar-none">
+      <div className={`grid grid-flow-col grid-rows-7 ${compact ? "min-w-[220px] gap-1" : "min-w-[420px] gap-1.5 sm:min-w-0"}`}>
         {days.map((day) => {
           const activityText = day.completed
             ? `${day.completed} ${day.completed === 1 ? "quest" : "quests"} · ${day.xp} XP`

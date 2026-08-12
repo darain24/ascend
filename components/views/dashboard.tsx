@@ -49,7 +49,7 @@ export function Dashboard() {
                 {hunter.level}
               </div>
               <div className="flex-1">
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">Level {hunter.level} · Rank {hunter.rank}</p>
                     <p className="mt-1 text-xs text-[var(--muted)]">Novice Hunter</p>
@@ -59,7 +59,7 @@ export function Dashboard() {
                 <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
                   <div className="h-full rounded-full bg-indigo-500" style={{ width: `${xpPercent}%` }} />
                 </div>
-                <div className="mt-2 flex justify-between text-[10px] text-[var(--muted)]">
+                <div className="mt-2 flex flex-wrap justify-between gap-1 text-[10px] text-[var(--muted)]">
                   <span>{Math.round(xpPercent)}% complete</span>
                   <span>{(hunter.xpToNext - hunter.xp).toLocaleString()} XP to next level</span>
                 </div>

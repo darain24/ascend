@@ -158,22 +158,24 @@ export function JourneyView() {
                 {nextRank ? `${Number.parseInt(nextRank.level) - hunter.level} levels to Rank ${nextRank.rank}` : "Highest rank reached"}
               </span>
             </div>
-            <div className="mt-7 flex items-center">
-              {ranks.map(({ rank, level }, index) => {
-                const current = rank === hunter.rank;
-                const passed = index < ranks.findIndex((item) => item.rank === hunter.rank);
-                return (
-                  <div key={rank} className="flex flex-1 items-center last:flex-none">
-                    <div className="text-center">
-                      <div className={`grid size-9 place-items-center rounded-full border text-xs font-semibold ${current ? "border-indigo-600 bg-indigo-600 text-white" : passed ? "border-emerald-200 bg-emerald-100 text-emerald-700" : "border-[var(--line)] bg-[var(--bg)] text-[var(--muted)]"}`}>
-                        {passed ? <Check size={14} /> : rank}
+            <div className="mt-7 overflow-x-auto pb-2 scrollbar-none">
+              <div className="flex min-w-[510px] items-center">
+                {ranks.map(({ rank, level }, index) => {
+                  const current = rank === hunter.rank;
+                  const passed = index < ranks.findIndex((item) => item.rank === hunter.rank);
+                  return (
+                    <div key={rank} className="flex flex-1 items-center last:flex-none">
+                      <div className="text-center">
+                        <div className={`grid size-9 place-items-center rounded-full border text-xs font-semibold ${current ? "border-indigo-600 bg-indigo-600 text-white" : passed ? "border-emerald-200 bg-emerald-100 text-emerald-700" : "border-[var(--line)] bg-[var(--bg)] text-[var(--muted)]"}`}>
+                          {passed ? <Check size={14} /> : rank}
+                        </div>
+                        <p className="mt-2 text-[9px] text-[var(--muted)]">{level}</p>
                       </div>
-                      <p className="mt-2 text-[9px] text-[var(--muted)]">{level}</p>
+                      {index < ranks.length - 1 && <div className={`mx-2 mb-5 h-px flex-1 ${passed || current ? "bg-indigo-200" : "bg-[var(--line)]"}`} />}
                     </div>
-                    {index < ranks.length - 1 && <div className={`mx-2 mb-5 h-px flex-1 ${passed || current ? "bg-indigo-200" : "bg-[var(--line)]"}`} />}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </section>
 

@@ -147,7 +147,7 @@ export function NotificationCenter() {
             role="dialog"
             aria-modal="true"
             aria-label="Upcoming events"
-            className="fixed inset-x-3 top-20 z-50 max-h-[calc(100vh-6rem)] overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-2xl sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-[390px]"
+            className="fixed inset-x-3 top-[4.5rem] z-50 max-h-[calc(100dvh-5.5rem-env(safe-area-inset-bottom))] overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-2xl sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-[390px]"
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}

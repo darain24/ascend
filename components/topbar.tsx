@@ -27,12 +27,12 @@ export function Topbar() {
   }, [profile.timezone]);
 
   return (
-    <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-[var(--line)] bg-[var(--bg)]/90 px-4 backdrop-blur-xl sm:px-7">
-      <div>
-        <p className="text-sm font-medium">{currentDate || "Today"}</p>
-        <p className="mt-0.5 text-[11px] text-[var(--muted)]">A fresh day to make progress</p>
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[var(--line)] bg-[var(--bg)]/90 px-3.5 backdrop-blur-xl min-[380px]:px-4 sm:h-[72px] sm:px-7">
+      <div className="min-w-0 pr-2">
+        <p className="truncate text-xs font-medium min-[380px]:text-sm">{currentDate || "Today"}</p>
+        <p className="mt-0.5 hidden text-[11px] text-[var(--muted)] min-[390px]:block">A fresh day to make progress</p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-0.5 min-[380px]:gap-1.5">
         <button aria-label="Toggle theme" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="grid size-9 place-items-center rounded-full text-[var(--muted)] transition hover:bg-[var(--panel)] hover:text-[var(--text)]">
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>

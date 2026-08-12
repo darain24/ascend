@@ -70,14 +70,14 @@ function Shell() {
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text)]">
       <Sidebar />
-      <div className="relative min-h-screen pb-24 md:ml-[88px] md:pb-0 xl:ml-[232px]">
+      <div className="relative min-h-screen pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:ml-[88px] md:pb-0 xl:ml-[232px]">
         <Topbar />
         <motion.div
           key={activeView}
           initial={{ opacity: 0, y: 12, scale: 0.995 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="view-enter mx-auto max-w-[1540px] px-4 pb-10 pt-5 sm:px-6 lg:px-8"
+          className="view-enter mx-auto max-w-[1540px] px-3.5 pb-8 pt-5 min-[380px]:px-4 sm:px-6 sm:pb-10 lg:px-8"
         >
           {views[activeView]}
         </motion.div>

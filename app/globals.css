@@ -38,6 +38,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-inter), system-ui, sans-serif;
@@ -50,6 +51,19 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 ::selection { background: #dedefc; color: #292a66; }
+
+@media (max-width: 767px) {
+  /* Prevent iOS Safari from zooming the whole layout when a form field receives focus. */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .system-panel {
+    border-radius: 16px;
+  }
+}
 
 .system-font {
   font-family: var(--font-inter), system-ui, sans-serif;

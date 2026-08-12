@@ -54,6 +54,44 @@ test("a new hunter completes the production account, quest, AI, guild, and raid 
     expect(initial.hunter.totalCompleted).toBe(0);
     expect(initial.quests).toHaveLength(0);
 
+    await page.setViewportSize({ width: 375, height: 812 });
+    const mobileNav = page.getByRole("navigation", { name: "Primary navigation" });
+    await expect(mobileNav).toBeVisible();
+    await expect(mobileNav.getByRole("button")).toHaveCount(5);
+    const mobileDestinations = [
+      { label: "Overview", heading: /Welcome/ },
+      { label: "Quests", heading: "Quests" },
+      { label: "Journey", heading: "Your journey" },
+      { label: "Profile", heading: "Profile" },
+    ];
+    for (const destination of mobileDestinations) {
+      await mobileNav.getByRole("button", { name: destination.label, exact: true }).click();
+      await expect(page.getByRole("heading", { name: destination.heading }).first()).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+    }
+    for (const destination of [
+      { label: "Progress", heading: "Progress" },
+      { label: "System", heading: "System" },
+      { label: "Guild", heading: "Guilds" },
+      { label: "Settings", heading: "Settings" },
+    ]) {
+      await mobileNav.getByRole("button", { name: "More navigation" }).click();
+      const menu = page.getByRole("region", { name: "More navigation" });
+      await menu.getByRole("button", { name: destination.label, exact: true }).click();
+      await expect(page.getByRole("heading", { name: destination.heading }).first()).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+    }
+    await mobileNav.getByRole("button", { name: "Profile", exact: true }).click();
+    const profileNameInput = page.getByLabel("Name").first();
+    expect(await profileNameInput.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16);
+    const navBoxes = await mobileNav.getByRole("button").evaluateAll((buttons) => buttons.map((button) => {
+      const rect = button.getBoundingClientRect();
+      return { left: rect.left, right: rect.right };
+    }));
+    expect(navBoxes.every((box, index) => index === navBoxes.length - 1 || box.right <= navBoxes[index + 1].left + 0.5)).toBeTruthy();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.getByRole("button", { name: "Overview", exact: true }).first().click();
+
     const guildResponse = await page.request.post("/api/guilds", { data: { name: `E2E Guild ${stamp}`, icon: "shield" } });
     expect(guildResponse.ok()).toBeTruthy();
     const guild = (await guildResponse.json()) as { guild: { id: string } };

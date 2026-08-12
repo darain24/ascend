@@ -43,7 +43,7 @@ export function AddQuestModal({ open, onClose }: { open: boolean; onClose: () =>
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[80] grid place-items-center bg-black/25 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[80] grid items-end bg-black/25 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:place-items-center sm:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -52,7 +52,7 @@ export function AddQuestModal({ open, onClose }: { open: boolean; onClose: () =>
           <motion.form
             onSubmit={submit}
             onClick={(event) => event.stopPropagation()}
-            className="w-full max-w-lg rounded-3xl bg-white p-6 text-slate-900 shadow-2xl sm:p-8"
+            className="max-h-[calc(100dvh-1.5rem-env(safe-area-inset-bottom))] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-5 text-slate-900 shadow-2xl sm:p-8"
             initial={{ opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12 }}
@@ -85,7 +85,7 @@ export function AddQuestModal({ open, onClose }: { open: boolean; onClose: () =>
                 className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-400"
               />
             </label>
-            <div className="mb-5 grid grid-cols-2 gap-4">
+            <div className="mb-5 grid gap-4 sm:grid-cols-2">
               <label>
                 <span className="mb-2 block text-xs font-medium text-slate-600">Attribute</span>
                 <select value={stat} onChange={(event) => setStat(event.target.value as StatKey)} className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs outline-none focus:border-indigo-400">
